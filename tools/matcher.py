@@ -264,6 +264,23 @@ def _build_per_person(
 # ---------------------------------------------------------------------------
 # 공개 API
 # ---------------------------------------------------------------------------
+def describe_grouping(
+    groups: list[list[str]],
+    preferences: dict[str, list[str]],
+    *,
+    mutual_bonus: float = 1.0,
+) -> tuple[float, list[PersonResult]]:
+    """이미 정해진 조편성(groups)에 대해 총점과 각자의 희망 반영 현황을 계산한다.
+
+    주최자가 손으로 조를 바꾼 뒤(수동 조정) 결과 설명을 다시 만들 때 쓴다.
+    """
+    everyone = [name for g in groups for name in g]
+    pts = _points_map(everyone, preferences)
+    total = _total_score(groups, pts, mutual_bonus)
+    per_person = _build_per_person(groups, preferences)
+    return total, per_person
+
+
 def match_groups(
     participants: Iterable[str],
     preferences: dict[str, list[str]],

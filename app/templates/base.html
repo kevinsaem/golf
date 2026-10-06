@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>{% block title %}티메이트{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <script>
+    tailwind.config = { theme: { extend: { colors: { grass: {
+      50:'#f0fdf4',100:'#dcfce7',500:'#22c55e',600:'#16a34a',700:'#15803d',800:'#166534'
+    }}}}}
+  </script>
+</head>
+<body class="bg-grass-50 min-h-screen text-slate-800 antialiased">
+  <div class="max-w-md mx-auto min-h-screen bg-white shadow-sm flex flex-col">
+    <header class="px-5 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white/90 backdrop-blur z-10">
+      <a href="/" class="font-extrabold text-grass-700 text-lg tracking-tight">⛳ 티메이트</a>
+      {% block header_right %}{% endblock %}
+    </header>
+    <main class="flex-1 px-5 py-6">
+      {% block content %}{% endblock %}
+    </main>
+    <footer class="px-5 py-4 text-center text-xs text-slate-400">
+      ⛳ 티메이트 · 원하는 사람과 같은 조로
+    </footer>
+  </div>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

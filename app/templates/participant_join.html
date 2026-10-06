@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="text-center">
+  <div class="text-4xl mb-2">⛳</div>
+  <h1 class="text-lg font-extrabold text-slate-900">{{ rnd.title }}</h1>
+  <p class="mt-1 text-sm text-slate-500">조편성에 참여해 주세요</p>
+</div>
+
+<h2 class="mt-7 mb-3 text-sm font-bold text-slate-500">본인 이름을 선택하세요</h2>
+<form method="post" action="/r/{{ rnd.public_id }}/join" class="space-y-2">
+  {% for p in rnd.participants %}
+  <button type="submit" name="participant_id" value="{{ p.id }}"
+    class="w-full text-left px-4 py-3 rounded-xl border font-medium transition
+    {{ 'border-slate-200 bg-slate-50 text-slate-300 cursor-not-allowed' if p.claimed else 'border-slate-300 text-slate-800 active:bg-grass-50' }}"
+    {{ 'disabled' if p.claimed else '' }}>
+    {{ p.name }}
+    {% if p.claimed %}<span class="text-xs float-right mt-0.5">선택됨</span>{% endif %}
+  </button>
+  {% endfor %}
+</form>
+<p class="mt-4 text-xs text-slate-400 text-center">이름을 잘못 골랐다면 주최자에게 알려주세요.</p>
+{% endblock %}

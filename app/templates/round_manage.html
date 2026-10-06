@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block header_right %}
+<a href="/" class="text-xs text-slate-400 hover:text-slate-600">내 라운딩</a>
+{% endblock %}
+{% block content %}
+<h1 class="text-xl font-extrabold text-slate-900">{{ rnd.title }}</h1>
+<p class="mt-1 text-xs text-slate-400">{{ rnd.group_count }}개 조 · 참가 {{ rnd.total_count }}명</p>
+
+<!-- 공유 링크 -->
+<div class="mt-5 bg-grass-50 border border-grass-100 rounded-xl p-4">
+  <p class="text-sm font-semibold text-grass-800 mb-2">📨 참가자에게 보낼 링크</p>
+  <div class="flex gap-2">
+    <input id="shareUrl" readonly value="{{ share_url }}"
+      class="flex-1 text-sm bg-white border border-grass-200 rounded-lg px-3 py-2 text-slate-600">
+    <button onclick="navigator.clipboard.writeText(document.getElementById('shareUrl').value); this.textContent='복사됨'"
+      class="bg-grass-600 text-white text-sm font-semibold rounded-lg px-3 py-2 whitespace-nowrap">복사</button>
+  </div>
+</div>
+
+<!-- 진행 현황 -->
+<div class="mt-6">
+  <div class="flex items-center justify-between mb-2">
+    <h2 class="text-sm font-bold text-slate-500">등록 현황</h2>
+    <span class="text-sm font-bold text-grass-700">{{ rnd.submitted_count }} / {{ rnd.total_count }}명</span>
+  </div>
+  <div class="w-full bg-slate-100 rounded-full h-2.5">
+    <div class="bg-grass-500 h-2.5 rounded-full transition-all"
+      style="width: {{ (rnd.submitted_count / rnd.total_count * 100) if rnd.total_count else 0 }}%"></div>
+  </div>
+  <ul class="mt-4 grid grid-cols-2 gap-2">
+    {% for p in rnd.participants %}
+    <li class="flex items-center gap-2 text-sm px-3 py-2 rounded-lg {{ 'bg-grass-50 text-grass-800' if p.submitted else 'bg-slate-50 text-slate-400' }}">
+      <span>{{ '✅' if p.submitted else '⏳' }}</span>
+      <span class="truncate">{{ p.name }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+
+{% if rnd.status != 'finalized' %}
+<!-- 자동 배정 버튼 -->
+<form method="post" action="/rounds/{{ rnd.public_id }}/finalize" class="mt-6">
+  <button type="submit" class="w-full bg-grass-600 text-white font-bold rounded-xl px-5 py-3.5 shadow-sm active:scale-[0.99] transition {{ '' if rnd.submitted_count else 'opacity-60' }}">
+    ⚡ 자동 조편성 하기
+  </button>
+  {% if not rnd.all_submitted %}
+  <p class="mt-2 text-center text-xs text-amber-600">아직 모두 등록하지 않았어요. 지금 눌러도 되지만, 전원 등록 후가 가장 정확해요.</p>
+  {% endif %}
+</form>
+{% else %}
+<!-- 확정 결과 -->
+{% set res = rnd.result_json %}
+<div class="mt-7">
+  <h2 class="text-base font-extrabold text-slate-900 mb-3">🏁 최종 조편성</h2>
+  {% for group in res.groups %}
+  <div class="mb-4 border border-slate-200 rounded-xl overflow-hidden">
+    <div class="bg-grass-700 text-white px-4 py-2 font-bold text-sm">{{ loop.index }}조</div>
+    <ul class="divide-y divide-slate-100">
+      {% for name in group %}
+      <li class="px-4 py-2.5 text-sm font-medium text-slate-800">{{ name }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endfor %}
+
+  <!-- 희망 반영 현황 (투명성) -->
+  <details class="mt-2 bg-slate-50 rounded-xl p-4">
+    <summary class="text-sm font-semibold text-slate-600 cursor-pointer">누구 희망이 반영됐는지 보기</summary>
+    <ul class="mt-3 space-y-2 text-xs text-slate-500">
+      {% for pr in res.per_person %}
+      <li>
+        <b class="text-slate-700">{{ pr.name }}</b>
+        {% if pr.got_top_choice %}<span class="text-grass-600">★1지망과 같은 조</span>{% endif %}
+        → {% for m in pr.mates %}{{ m.name }}{% if m.rank %}({{ m.rank }}지망{% if m.mutual %}·서로{% endif %}){% endif %}{% if not loop.last %}, {% endif %}{% endfor %}
+      </li>
+      {% endfor %}
+    </ul>
+  </details>
+
+  <!-- 수동 조정: 두 명 맞바꾸기 -->
+  <form method="post" action="/rounds/{{ rnd.public_id }}/swap" class="mt-5 bg-white border border-slate-200 rounded-xl p-4">
+    <p class="text-sm font-semibold text-slate-600 mb-2">손으로 두 명 자리 바꾸기</p>
+    <div class="flex items-center gap-2">
+      {% set allnames = res.groups | sum(start=[]) %}
+      <select name="name_a" class="flex-1 border border-slate-300 rounded-lg px-2 py-2 text-sm">
+        {% for n in allnames %}<option value="{{ n }}">{{ n }}</option>{% endfor %}
+      </select>
+      <span class="text-slate-400">↔</span>
+      <select name="name_b" class="flex-1 border border-slate-300 rounded-lg px-2 py-2 text-sm">
+        {% for n in allnames %}<option value="{{ n }}">{{ n }}</option>{% endfor %}
+      </select>
+      <button class="bg-slate-700 text-white text-sm font-semibold rounded-lg px-3 py-2">바꾸기</button>
+    </div>
+  </form>
+
+  <form method="post" action="/rounds/{{ rnd.public_id }}/reopen" class="mt-3">
+    <button class="w-full text-sm text-slate-500 border border-slate-200 rounded-xl px-5 py-2.5">다시 열기 (재등록 받기)</button>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="mb-5">
+  <p class="text-xs text-slate-400">{{ rnd.title }}</p>
+  <h1 class="text-lg font-extrabold text-slate-900">{{ me.name }}님</h1>
+</div>
+
+{% if rnd.status == 'finalized' and my_group %}
+<!-- 확정된 결과 -->
+<div class="bg-grass-600 text-white rounded-2xl p-5 text-center">
+  <p class="text-sm opacity-90">조편성이 확정됐어요!</p>
+  <p class="mt-1 text-2xl font-extrabold">{{ my_group_index + 1 }}조</p>
+  <p class="mt-3 text-grass-50 font-medium">{{ my_group | join('  ·  ') }}</p>
+</div>
+<h2 class="mt-7 mb-3 text-sm font-bold text-slate-500">전체 조편성</h2>
+{% for group in rnd.result_json.groups %}
+<div class="mb-3 border rounded-xl overflow-hidden {{ 'border-grass-400' if loop.index0 == my_group_index else 'border-slate-200' }}">
+  <div class="px-4 py-2 font-bold text-sm {{ 'bg-grass-700 text-white' if loop.index0 == my_group_index else 'bg-slate-100 text-slate-600' }}">{{ loop.index }}조</div>
+  <ul class="divide-y divide-slate-100">
+    {% for name in group %}
+    <li class="px-4 py-2 text-sm {{ 'font-bold text-grass-800' if name == me.name else 'text-slate-700' }}">{{ name }}{% if name == me.name %} (나){% endif %}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endfor %}
+
+{% else %}
+<!-- 아직 모으는 중 -->
+<div class="bg-grass-50 border border-grass-100 rounded-2xl p-5">
+  {% if me.submitted %}
+  <p class="text-grass-800 font-bold">✅ 희망 순위 등록 완료!</p>
+  <p class="mt-1 text-sm text-slate-500">다른 참가자들을 기다리는 중이에요.</p>
+  {% else %}
+  <p class="text-amber-700 font-bold">⏳ 아직 순위를 안 내셨어요</p>
+  {% endif %}
+
+  <div class="mt-4">
+    <div class="flex items-center justify-between mb-1.5">
+      <span class="text-xs text-slate-500">전체 등록 현황</span>
+      <span class="text-sm font-bold text-grass-700">{{ rnd.submitted_count }} / {{ rnd.total_count }}명</span>
+    </div>
+    <div class="w-full bg-white rounded-full h-2.5">
+      <div class="bg-grass-500 h-2.5 rounded-full" style="width: {{ (rnd.submitted_count / rnd.total_count * 100) if rnd.total_count else 0 }}%"></div>
+    </div>
+  </div>
+</div>
+
+{% if me.submitted and my_ranking %}
+<h2 class="mt-7 mb-2 text-sm font-bold text-slate-500">내가 낸 희망 순위</h2>
+<ol class="space-y-1.5">
+  {% for name in my_ranking %}
+  <li class="flex items-center gap-3 text-sm">
+    <span class="w-6 h-6 rounded-full bg-grass-100 text-grass-700 text-xs font-bold grid place-items-center">{{ loop.index }}</span>
+    <span class="text-slate-700">{{ name }}</span>
+  </li>
+  {% endfor %}
+</ol>
+{% endif %}
+
+<a href="/r/{{ rnd.public_id }}/edit" class="mt-6 block w-full text-center font-semibold rounded-xl px-5 py-3.5 transition active:scale-[0.99] {{ 'border border-slate-300 text-slate-700' if me.submitted else 'bg-grass-600 text-white shadow-sm' }}">
+  {{ '순위 수정하기' if me.submitted else '지금 순위 정하기' }}
+</a>
+{% endif %}
+{% endblock %}

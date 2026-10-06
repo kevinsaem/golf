@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<a href="/" class="text-sm text-slate-400">← 뒤로</a>
+<h1 class="mt-3 text-xl font-extrabold text-slate-900">새 라운딩 만들기</h1>
+
+<form method="post" action="/rounds" class="mt-6 space-y-5">
+  <div>
+    <label class="block text-sm font-semibold text-slate-700 mb-1.5">라운딩 이름</label>
+    <input name="title" required placeholder="예: 3월 정기 라운딩"
+      class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-grass-500 outline-none">
+  </div>
+
+  <div>
+    <label class="block text-sm font-semibold text-slate-700 mb-1.5">몇 개 조로 나눌까요?</label>
+    <input name="group_count" type="number" min="1" value="2" required
+      class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-grass-500 outline-none">
+    <p class="mt-1 text-xs text-slate-400">보통 4명이 한 조예요. 8명이면 2개 조.</p>
+  </div>
+
+  <div>
+    <label class="block text-sm font-semibold text-slate-700 mb-1.5">참석자 명단</label>
+    <textarea name="names" rows="8" required placeholder="한 줄에 한 명씩 이름을 적어주세요&#10;홍길동&#10;김철수&#10;이영희 ..."
+      class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-grass-500 outline-none"></textarea>
+    <p class="mt-1 text-xs text-slate-400">주최자(본인)도 포함해서 적어주세요.</p>
+  </div>
+
+  <button type="submit" class="w-full bg-grass-600 text-white font-bold rounded-xl px-5 py-3.5 shadow-sm active:scale-[0.99] transition">
+    만들고 공유 링크 받기
+  </button>
+</form>
+{% endblock %}

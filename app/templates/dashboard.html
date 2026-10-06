@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block header_right %}
+<a href="/logout" class="text-xs text-slate-400 hover:text-slate-600">로그아웃</a>
+{% endblock %}
+{% block content %}
+<div class="flex items-center gap-3 mb-6">
+  {% if organizer.picture %}
+  <img src="{{ organizer.picture }}" class="w-10 h-10 rounded-full" alt="">
+  {% endif %}
+  <div>
+    <p class="text-sm text-slate-400">주최자</p>
+    <p class="font-bold text-slate-900">{{ organizer.name or organizer.email }}</p>
+  </div>
+</div>
+
+<a href="/rounds/new" class="block w-full text-center bg-grass-600 text-white font-bold rounded-xl px-5 py-3.5 shadow-sm active:scale-[0.99] transition">
+  + 새 라운딩 만들기
+</a>
+
+<h2 class="mt-8 mb-3 text-sm font-bold text-slate-500">내 라운딩</h2>
+{% if rounds %}
+<ul class="space-y-3">
+  {% for r in rounds %}
+  <li>
+    <a href="/rounds/{{ r.public_id }}/manage" class="block border border-slate-200 rounded-xl px-4 py-3 active:bg-slate-50">
+      <div class="flex items-center justify-between">
+        <span class="font-semibold text-slate-900">{{ r.title }}</span>
+        {% if r.status == 'finalized' %}
+        <span class="text-xs bg-grass-100 text-grass-700 rounded-full px-2 py-0.5">확정</span>
+        {% else %}
+        <span class="text-xs bg-amber-100 text-amber-700 rounded-full px-2 py-0.5">모으는 중</span>
+        {% endif %}
+      </div>
+      <p class="mt-1 text-xs text-slate-400">
+        {{ r.group_count }}개 조 · 참가 {{ r.total_count }}명 · 등록 {{ r.submitted_count }}명
+      </p>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="text-sm text-slate-400 text-center py-8">아직 만든 라운딩이 없어요.<br>위 버튼으로 첫 라운딩을 만들어 보세요.</p>
+{% endif %}
+{% endblock %}
