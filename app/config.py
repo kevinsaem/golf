@@ -16,5 +16,9 @@ OAUTH_REDIRECT_URI: str = os.environ.get(
 )
 DATABASE_URL: str = os.environ.get("DATABASE_URL", "sqlite:///./teemate.db")
 
+# 운영(https)에서는 .env 에 COOKIE_SECURE=true 를 넣어 쿠키에 Secure 플래그를 건다.
+# 로컬 개발/테스트(http)에서는 false 라야 쿠키가 정상 설정된다.
+COOKIE_SECURE: bool = os.environ.get("COOKIE_SECURE", "false").lower() == "true"
+
 # 구글 로그인 설정이 갖춰졌는지 (열쇠 2개 모두 있는지)
 GOOGLE_LOGIN_ENABLED: bool = bool(GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET)

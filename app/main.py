@@ -31,10 +31,27 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="티메이트 (TeeMate)", lifespan=lifespan)
-app.add_middleware(SessionMiddleware, secret_key=config.SECRET_KEY, same_site="lax")
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=config.SECRET_KEY,
+    same_site="lax",
+    https_only=config.COOKIE_SECURE,
+)
 app.include_router(auth_router)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
+
+
+@app.middleware("http")
+async def _security_headers(request: Request, call_next):
+    """브라우저 보안 헤더 추가 (HSTS, 콘텐츠 스니핑/클릭재킹 방지)."""
+    response = await call_next(request)
+    if config.COOKIE_SECURE:  # 운영(https)에서만 HSTS
+        response.headers["Strict-Transport-Security"] = "max-age=31536000"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "same-origin"
+    return response
 
 
 def _cookie_name(public_id: str) -> str:
@@ -316,6 +333,7 @@ def participant_join(
         max_age=60 * 60 * 24 * 60,  # 60일
         httponly=True,
         samesite="lax",
+        secure=config.COOKIE_SECURE,
     )
     return resp
 
