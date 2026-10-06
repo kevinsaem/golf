@@ -186,6 +186,71 @@ def round_manage(
     )
 
 
+@app.post("/rounds/{public_id}/participants")
+async def edit_participants(
+    public_id: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    organizer: Optional[Organizer] = Depends(current_organizer),
+):
+    """명단 수정: 이름 변경·삭제·추가 + 조 개수 변경. (모으는 중에만 가능)"""
+    rnd = _get_round_or_404(db, public_id)
+    _require_owner(rnd, organizer)
+    if rnd.status == "finalized":
+        raise HTTPException(
+            status_code=400, detail="확정된 라운딩입니다. 먼저 '다시 열기'를 눌러 수정하세요."
+        )
+
+    form = await request.form()
+    try:
+        group_count = int(form.get("group_count", rnd.group_count))
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="조 개수가 올바르지 않습니다.")
+
+    existing = list(rnd.participants)
+    delete_ids = {p.id for p in existing if form.get(f"delete_{p.id}")}
+    keep = [p for p in existing if p.id not in delete_ids]
+    renamed = {p.id: str(form.get(f"name_{p.id}") or p.name).strip() for p in keep}
+    new_names = [
+        n.strip()
+        for n in str(form.get("new_names", "")).replace(",", "\n").splitlines()
+        if n.strip()
+    ]
+
+    final_names = [renamed[p.id] for p in keep] + new_names
+    if any(not n for n in final_names):
+        raise HTTPException(status_code=400, detail="빈 이름은 쓸 수 없습니다.")
+    if len(final_names) < 2:
+        raise HTTPException(status_code=400, detail="참가자는 최소 2명 이상이어야 합니다.")
+    if len(set(final_names)) != len(final_names):
+        raise HTTPException(status_code=400, detail="이름이 중복됩니다. 서로 다르게 해주세요.")
+    if group_count < 1 or group_count > len(final_names):
+        raise HTTPException(
+            status_code=400, detail="조 개수가 참가자 수에 비해 올바르지 않습니다."
+        )
+
+    # 적용
+    for p in existing:
+        if p.id in delete_ids:
+            db.delete(p)
+    for p in keep:
+        p.name = renamed[p.id]
+    for n in new_names:
+        rnd.participants.append(Participant(name=n))
+    rnd.group_count = group_count
+
+    # 삭제된 사람 참조를 남은 참가자 희망순위에서 제거
+    if delete_ids:
+        for p in keep:
+            if p.preference_json:
+                cleaned = [i for i in p.preference_json if i not in delete_ids]
+                if cleaned != p.preference_json:
+                    p.preference_json = cleaned
+    rnd.result_json = None  # 명단이 바뀌면 이전 자동배정 결과는 무효
+    db.commit()
+    return RedirectResponse(f"/rounds/{public_id}/manage", status_code=303)
+
+
 @app.post("/rounds/{public_id}/finalize")
 def finalize_round(
     public_id: str,

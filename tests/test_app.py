@@ -242,6 +242,98 @@ def test_manual_swap_moves_members(ctx):
     db.close()
 
 
+def test_edit_rename_keeps_preferences(ctx):
+    """이름을 바꿔도 (ID 기반) 기존 희망순위가 유지되는지."""
+    client, Session, _ = ctx
+    pid = _create_round(client, names=["가", "나", "다", "라"])
+    db = Session()
+    rnd = db.query(Round).filter_by(public_id=pid).first()
+    ids = {p.name: p.id for p in rnd.participants}
+    # '가' 가 [나,다,라] 순위 제출
+    me = next(p for p in rnd.participants if p.name == "가")
+    me.preference_json = [ids["나"], ids["다"], ids["라"]]
+    me.submitted = True
+    db.commit()
+    db.close()
+
+    # '나' -> '나나' 로 개명
+    r = client.post(
+        f"/rounds/{pid}/participants",
+        data={"group_count": 2, f"name_{ids['가']}": "가", f"name_{ids['나']}": "나나",
+              f"name_{ids['다']}": "다", f"name_{ids['라']}": "라", "new_names": ""},
+        follow_redirects=False,
+    )
+    assert r.status_code == 303
+
+    db = Session()
+    rnd = db.query(Round).filter_by(public_id=pid).first()
+    names = {p.name for p in rnd.participants}
+    assert "나나" in names and "나" not in names
+    me = next(p for p in rnd.participants if p.name == "가")
+    assert me.preference_json == [ids["나"], ids["다"], ids["라"]]  # ID 그대로 → 순위 유지
+    assert me.submitted is True
+    db.close()
+
+
+def test_edit_add_and_remove_participant(ctx):
+    client, Session, _ = ctx
+    pid = _create_round(client, names=["가", "나", "다", "라"])
+    db = Session()
+    rnd = db.query(Round).filter_by(public_id=pid).first()
+    ids = {p.name: p.id for p in rnd.participants}
+    # '가' 순위에 '라' 포함
+    me = next(p for p in rnd.participants if p.name == "가")
+    me.preference_json = [ids["나"], ids["다"], ids["라"]]
+    me.submitted = True
+    db.commit()
+    db.close()
+
+    # '라' 삭제 + '마' 추가
+    data = {"group_count": 2, "new_names": "마"}
+    for n, i in ids.items():
+        data[f"name_{i}"] = n
+    data[f"delete_{ids['라']}"] = "1"
+    r = client.post(f"/rounds/{pid}/participants", data=data, follow_redirects=False)
+    assert r.status_code == 303
+
+    db = Session()
+    rnd = db.query(Round).filter_by(public_id=pid).first()
+    names = {p.name for p in rnd.participants}
+    assert names == {"가", "나", "다", "마"}  # 라 빠지고 마 추가
+    me = next(p for p in rnd.participants if p.name == "가")
+    assert ids["라"] not in me.preference_json  # 삭제된 사람 참조 정리됨
+    db.close()
+
+
+def test_edit_rejects_duplicate_names(ctx):
+    client, Session, _ = ctx
+    pid = _create_round(client, names=["가", "나", "다", "라"])
+    db = Session()
+    rnd = db.query(Round).filter_by(public_id=pid).first()
+    ids = {p.name: p.id for p in rnd.participants}
+    db.close()
+    # '나' 를 '가' 로 바꿔 중복 유발
+    data = {"group_count": 2, "new_names": ""}
+    for n, i in ids.items():
+        data[f"name_{i}"] = n
+    data[f"name_{ids['나']}"] = "가"
+    r = client.post(f"/rounds/{pid}/participants", data=data, follow_redirects=False)
+    assert r.status_code == 400
+
+
+def test_edit_blocked_when_finalized(ctx):
+    client, Session, _ = ctx
+    pid = _create_round(client, group_count=2)
+    _fill_all_preferences(Session, pid)
+    client.post(f"/rounds/{pid}/finalize", follow_redirects=False)
+    r = client.post(
+        f"/rounds/{pid}/participants",
+        data={"group_count": 2, "new_names": "새사람"},
+        follow_redirects=False,
+    )
+    assert r.status_code == 400
+
+
 def test_outsider_cannot_manage_round(ctx):
     client, Session, org_id = ctx
     pid = _create_round(client)

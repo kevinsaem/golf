@@ -47,6 +47,37 @@
   <p class="mt-2 text-center text-xs text-amber-600">아직 모두 등록하지 않았어요. 지금 눌러도 되지만, 전원 등록 후가 가장 정확해요.</p>
   {% endif %}
 </form>
+
+<!-- 명단 수정 -->
+<details class="mt-5 bg-white border border-slate-200 rounded-xl p-4">
+  <summary class="text-sm font-semibold text-slate-600 cursor-pointer">✏️ 명단 수정 (이름 고치기 · 추가 · 삭제)</summary>
+  <form method="post" action="/rounds/{{ rnd.public_id }}/participants" class="mt-4 space-y-3">
+    <div>
+      <label class="block text-xs font-semibold text-slate-500 mb-1">조 개수</label>
+      <input name="group_count" type="number" min="1" value="{{ rnd.group_count }}"
+        class="w-24 border border-slate-300 rounded-lg px-3 py-2 text-sm">
+    </div>
+    <div class="space-y-2">
+      {% for p in rnd.participants %}
+      <div class="flex items-center gap-2">
+        <input name="name_{{ p.id }}" value="{{ p.name }}"
+          class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm">
+        {% if p.submitted %}<span class="text-xs text-grass-600" title="순위 제출함">✅</span>{% endif %}
+        <label class="flex items-center gap-1 text-xs text-red-500 whitespace-nowrap">
+          <input type="checkbox" name="delete_{{ p.id }}" value="1"> 삭제
+        </label>
+      </div>
+      {% endfor %}
+    </div>
+    <div>
+      <label class="block text-xs font-semibold text-slate-500 mb-1">새 참가자 추가 (한 줄에 한 명)</label>
+      <textarea name="new_names" rows="2" placeholder="새 참가자 이름"
+        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"></textarea>
+    </div>
+    <button class="w-full bg-slate-700 text-white text-sm font-semibold rounded-lg px-4 py-2.5">명단 저장</button>
+    <p class="text-[11px] text-slate-400 leading-relaxed">※ 이름을 바꿔도 이미 제출한 희망순위는 유지돼요. 명단을 바꾸면 이전 자동배정 결과는 초기화됩니다. 새로 추가된 사람은 기존 제출자(✅)의 순위에 빠져 있으니, 필요하면 재등록을 요청하세요.</p>
+  </form>
+</details>
 {% else %}
 <!-- 확정 결과 -->
 {% set res = rnd.result_json %}
