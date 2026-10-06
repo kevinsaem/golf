@@ -5,7 +5,7 @@
   <h1 class="text-lg font-extrabold text-slate-900">
     {{ me.name }}님의 희망 순위{% if editing %} <span class="text-grass-600">수정</span>{% endif %}
   </h1>
-  <p class="mt-1 text-sm text-slate-500">같이 치고 싶은 사람을 <b>위로</b> 끌어 올리세요.<br>맨 위가 1지망이에요. (길게 눌러서 드래그)</p>
+  <p class="mt-1 text-sm text-slate-500">같이 치고 싶은 사람일수록 <b>앞 번호</b>로. 오른쪽 <b>≡ 손잡이</b>를 잡고 옮기세요. (번호 1번이 1지망)</p>
   {% if editing %}
   <div class="mt-2 text-xs bg-slate-50 text-slate-500 rounded-lg px-3 py-2">현재 저장된 순서예요. 바꾼 뒤 아래 버튼을 누르면 수정돼요.</div>
   {% endif %}
@@ -13,23 +13,25 @@
 
 <form method="post" action="/r/{{ rnd.public_id }}/rank" onsubmit="fillOrder()">
   <input type="hidden" name="order" id="order">
-  <ul id="rankList" class="space-y-2">
+  <ul id="rankList" class="grid grid-cols-2 gap-2">
     {% for o in others %}
     <li data-id="{{ o.id }}"
-      class="flex items-center gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3.5 shadow-sm select-none touch-none">
-      <span class="rank-badge flex-none w-7 h-7 rounded-full bg-grass-600 text-white text-sm font-bold grid place-items-center"></span>
-      <span class="flex-1 font-medium text-slate-800">{{ o.name }}</span>
-      <span class="text-slate-300 text-xl">≡</span>
+      class="flex items-center gap-2 bg-white border border-slate-200 rounded-xl pl-2 pr-1 py-2.5 shadow-sm">
+      <span class="rank-badge flex-none w-6 h-6 rounded-full bg-grass-600 text-white text-xs font-bold grid place-items-center"></span>
+      <span class="flex-1 font-medium text-slate-800 text-sm truncate">{{ o.name }}</span>
+      <span class="drag-handle flex-none grid place-items-center w-8 h-8 text-slate-300 text-lg cursor-grab touch-none" aria-label="순서 이동 손잡이">≡</span>
     </li>
     {% endfor %}
   </ul>
 
-  <button type="submit" class="mt-6 w-full bg-grass-600 text-white font-bold rounded-xl px-5 py-3.5 shadow-sm active:scale-[0.99] transition">
-    {{ '수정 완료' if editing else '이 순위로 제출하기' }}
-  </button>
-  {% if editing %}
-  <a href="/r/{{ rnd.public_id }}" class="mt-3 block w-full text-center text-sm text-slate-500 border border-slate-200 rounded-xl px-5 py-2.5">취소 (현황으로 돌아가기)</a>
-  {% endif %}
+  <div class="sticky bottom-0 -mx-5 mt-5 px-5 pt-3 pb-4 bg-white/95 backdrop-blur border-t border-slate-100">
+    <button type="submit" class="w-full bg-grass-600 text-white font-bold rounded-xl px-5 py-3.5 shadow-sm active:scale-[0.99] transition">
+      {{ '수정 완료' if editing else '이 순위로 제출하기' }}
+    </button>
+    {% if editing %}
+    <a href="/r/{{ rnd.public_id }}" class="mt-2 block w-full text-center text-sm text-slate-500">취소 (현황으로 돌아가기)</a>
+    {% endif %}
+  </div>
 </form>
 {% endblock %}
 
@@ -46,7 +48,8 @@
     document.getElementById('order').value =
       [...list.children].map(li => li.dataset.id).join(',');
   }
-  new Sortable(list, { animation: 150, onEnd: renumber });
+  // handle 로만 드래그 시작 → 목록을 그냥 터치하면 스크롤, 손잡이를 잡아야 순위 이동
+  new Sortable(list, { animation: 150, handle: '.drag-handle', onEnd: renumber });
   renumber();
 </script>
 {% endblock %}
