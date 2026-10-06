@@ -7,6 +7,10 @@ python-multipart==0.0.20
 # 데이터베이스
 sqlalchemy==2.0.36
 
+# 인증 (주최자 구글 로그인)
+authlib==1.4.0
+itsdangerous==2.2.0
+
 # 테스트
 pytest==8.3.4
 playwright==1.49.1
