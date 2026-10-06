@@ -38,10 +38,24 @@
 ## 개발 현황 (단계별)
 
 - [x] **1단계 — 매칭 엔진** (`tools/matcher.py`, 테스트 17개 통과)
-- [ ] 2단계 — 서버 + 데이터 (라운딩 생성·링크·저장)
-- [ ] 3단계 — 화면 5개 (모바일 우선)
-- [ ] 4단계 — 전체 테스트 (pytest + Playwright)
-- [ ] 5단계 — 보안 점검 + 배포
+- [x] **2단계 — 서버 + 데이터** (주최자 구글로그인, 라운딩 생성·링크·저장)
+- [x] **3단계 — 화면 8개** (모바일 우선, Jinja2 + Tailwind + SortableJS)
+- [x] **4단계 — 테스트** (pytest 26개 통과 + 실서버 curl 검증) *(Playwright E2E는 추후)*
+- [x] **5단계 — 배포** (golf.kevinsaem.com, cafe24 VPS, https 적용)
+
+## 배포 (cafe24 VPS)
+
+- 서버: cafe24 가상서버 `1.234.20.103` (SSH 별칭 `kevinsaem`), Ubuntu 22.04
+- 앱 위치: `/opt/golf`, 파이썬 venv `/opt/golf/.venv`
+- 서비스: systemd `golf.service` (uvicorn 127.0.0.1:8900, 자동재시작/부팅시작)
+- 웹: nginx `golf.kevinsaem.com` → 127.0.0.1:8900, Let's Encrypt SSL(자동갱신)
+- DB: SQLite `/opt/golf/teemate.db` (추후 PostgreSQL 이전 가능)
+- 비밀: 서버 `/opt/golf/.env` (구글 OAuth 키, SECRET_KEY) — git 제외
+
+```bash
+# 코드 수정 후 재배포
+ssh kevinsaem 'cd /opt/golf && git pull && .venv/bin/pip install -r requirements.txt && systemctl restart golf'
+```
 
 ## 개발 환경
 
