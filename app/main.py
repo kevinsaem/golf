@@ -331,12 +331,15 @@ def participant_entry(
     rnd = _get_round_or_404(db, public_id)
     me = _identify_participant(request, rnd)
 
+    # 확정된 라운딩: 결과는 누구나(이름 선택 없이도) 볼 수 있다. 본인이면 내 조 강조.
+    if rnd.status == "finalized":
+        return _render_status(request, rnd, me)
+    # 수집 중: 본인 식별이 안 되면 이름 선택 화면
     if me is None:
         return templates.TemplateResponse(
             "participant_join.html", {"request": request, "rnd": rnd}
         )
-    # 확정됐거나 이미 제출했으면 현황/결과, 아니면 순위 입력 폼
-    if rnd.status == "finalized" or me.submitted:
+    if me.submitted:
         return _render_status(request, rnd, me)
     return _render_rank_form(request, rnd, me)
 
@@ -349,10 +352,12 @@ def _render_status(request: Request, rnd: Round, me: Participant) -> HTMLRespons
     elif request.query_params.get("saved"):
         notice = "saved"
     id_to_name = {p.id: p.name for p in rnd.participants}
-    my_ranking = [id_to_name[i] for i in (me.preference_json or []) if i in id_to_name]
+    my_ranking = (
+        [id_to_name[i] for i in (me.preference_json or []) if i in id_to_name] if me else []
+    )
     my_group: Optional[list[str]] = None
     my_group_index: Optional[int] = None
-    if rnd.status == "finalized" and rnd.result_json:
+    if me and rnd.status == "finalized" and rnd.result_json:
         for gi, group in enumerate(rnd.result_json["groups"]):
             if me.name in group:
                 my_group = group
@@ -400,8 +405,7 @@ def participant_join(
     me = next((p for p in rnd.participants if p.id == participant_id), None)
     if me is None:
         raise HTTPException(status_code=404, detail="참가자를 찾을 수 없습니다.")
-    if me.claimed:
-        raise HTTPException(status_code=409, detail="이미 선택된 이름입니다.")
+    # 이미 선택된 이름도 다시 선택 가능(재접속·결과확인용). 쿠키를 다시 발급한다.
     me.claimed = True
     db.commit()
     resp = RedirectResponse(f"/r/{public_id}", status_code=303)

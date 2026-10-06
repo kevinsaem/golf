@@ -191,7 +191,8 @@ def test_edit_blocked_after_finalize_shows_closed(ctx):
     assert "마감" in r.text
 
 
-def test_claimed_name_cannot_be_taken_twice(ctx):
+def test_claimed_name_can_be_reselected(ctx):
+    """이미 선택된 이름도 (다른 기기/쿠키 유실 시) 다시 선택해 이어갈 수 있다."""
     client, Session, _ = ctx
     pid = _create_round(client)
     db = Session()
@@ -200,10 +201,26 @@ def test_claimed_name_cannot_be_taken_twice(ctx):
     db.close()
 
     client.post(f"/r/{pid}/join", data={"participant_id": gaid}, follow_redirects=False)
-    # 새 손님(쿠키 없음)으로 같은 이름 시도
+    # 새 손님(쿠키 없음)으로 같은 이름 재선택 → 허용(쿠키 재발급)
     fresh = TestClient(app)
     r = fresh.post(f"/r/{pid}/join", data={"participant_id": gaid}, follow_redirects=False)
-    assert r.status_code == 409
+    assert r.status_code == 303
+    assert any("tm_" in k for k in fresh.cookies.keys())
+
+
+def test_finalized_result_visible_without_cookie(ctx):
+    """확정 후에는 쿠키/이름 선택 없이 링크만 열어도 전체 조편성이 보인다."""
+    client, Session, _ = ctx
+    pid = _create_round(client, group_count=2)
+    _fill_all_preferences(Session, pid)
+    client.post(f"/rounds/{pid}/finalize", follow_redirects=False)
+
+    anon = TestClient(app)  # 쿠키 없는 방문자
+    r = anon.get(f"/r/{pid}")
+    assert r.status_code == 200
+    assert "조편성 결과" in r.text
+    assert "전체 조편성" in r.text
+    assert "가" in r.text and "아" in r.text  # 참가자들이 결과에 보임
 
 
 # ---------------------------------------------------------------------------

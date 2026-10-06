@@ -2,7 +2,7 @@
 {% block content %}
 <div class="mb-5">
   <p class="text-xs text-slate-400">{{ rnd.title }}</p>
-  <h1 class="text-lg font-extrabold text-slate-900">{{ me.name }}님</h1>
+  <h1 class="text-lg font-extrabold text-slate-900">{% if me %}{{ me.name }}님{% else %}조편성 결과{% endif %}</h1>
 </div>
 
 {% if notice == 'saved' %}
@@ -11,27 +11,40 @@
 <div class="mb-4 text-sm bg-amber-100 text-amber-800 rounded-lg px-4 py-2.5">🔒 이미 조편성이 마감되어 수정할 수 없어요.</div>
 {% endif %}
 
-{% if rnd.status == 'finalized' and my_group %}
-<!-- 확정된 결과 -->
+{% if rnd.status == 'finalized' %}
+<!-- 확정된 결과 (누구나 볼 수 있음) -->
+{% if my_group %}
 <div class="bg-grass-600 text-white rounded-2xl p-5 text-center">
   <p class="text-sm opacity-90">조편성이 확정됐어요!</p>
   <p class="mt-1 text-2xl font-extrabold">{{ my_group_index + 1 }}조</p>
   <p class="mt-3 text-grass-50 font-medium">{{ my_group | join('  ·  ') }}</p>
 </div>
+{% elif not me %}
+<div class="mb-4 bg-grass-50 border border-grass-100 rounded-xl p-4">
+  <p class="text-sm text-slate-600 mb-2">본인 이름을 선택하면 <b>내 조</b>가 강조돼요.</p>
+  <form method="post" action="/r/{{ rnd.public_id }}/join" class="grid grid-cols-2 gap-2">
+    {% for p in rnd.participants %}
+    <button name="participant_id" value="{{ p.id }}"
+      class="text-sm border border-slate-300 rounded-lg px-2 py-2 text-slate-700 active:bg-grass-50">{{ p.name }}</button>
+    {% endfor %}
+  </form>
+</div>
+{% endif %}
+
 <h2 class="mt-7 mb-3 text-sm font-bold text-slate-500">전체 조편성</h2>
 {% for group in rnd.result_json.groups %}
 <div class="mb-3 border rounded-xl overflow-hidden {{ 'border-grass-400' if loop.index0 == my_group_index else 'border-slate-200' }}">
   <div class="px-4 py-2 font-bold text-sm {{ 'bg-grass-700 text-white' if loop.index0 == my_group_index else 'bg-slate-100 text-slate-600' }}">{{ loop.index }}조</div>
   <ul class="divide-y divide-slate-100">
     {% for name in group %}
-    <li class="px-4 py-2 text-sm {{ 'font-bold text-grass-800' if name == me.name else 'text-slate-700' }}">{{ name }}{% if name == me.name %} (나){% endif %}</li>
+    <li class="px-4 py-2 text-sm {{ 'font-bold text-grass-800' if me and name == me.name else 'text-slate-700' }}">{{ name }}{% if me and name == me.name %} (나){% endif %}</li>
     {% endfor %}
   </ul>
 </div>
 {% endfor %}
 
 {% else %}
-<!-- 아직 모으는 중 -->
+<!-- 아직 모으는 중 (본인 식별된 상태) -->
 <div class="bg-grass-50 border border-grass-100 rounded-2xl p-5">
   {% if me.submitted %}
   <p class="text-grass-800 font-bold">✅ 희망 순위 등록 완료!</p>

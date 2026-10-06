@@ -10,13 +10,12 @@
 <form method="post" action="/r/{{ rnd.public_id }}/join" class="space-y-2">
   {% for p in rnd.participants %}
   <button type="submit" name="participant_id" value="{{ p.id }}"
-    class="w-full text-left px-4 py-3 rounded-xl border font-medium transition
-    {{ 'border-slate-200 bg-slate-50 text-slate-300 cursor-not-allowed' if p.claimed else 'border-slate-300 text-slate-800 active:bg-grass-50' }}"
-    {{ 'disabled' if p.claimed else '' }}>
+    class="w-full text-left px-4 py-3 rounded-xl border font-medium transition border-slate-300 text-slate-800 active:bg-grass-50"
+    {% if p.claimed %}onclick="return confirm('이미 등록된 이름이에요. 본인이 맞으면 이어서 진행할게요. 계속할까요?')"{% endif %}>
     {{ p.name }}
-    {% if p.claimed %}<span class="text-xs float-right mt-0.5">선택됨</span>{% endif %}
+    {% if p.claimed %}<span class="text-xs float-right mt-0.5 text-slate-400">선택됨</span>{% endif %}
   </button>
   {% endfor %}
 </form>
-<p class="mt-4 text-xs text-slate-400 text-center">이름을 잘못 골랐다면 주최자에게 알려주세요.</p>
+<p class="mt-4 text-xs text-slate-400 text-center">이미 선택된 이름도, 본인이면 다시 눌러 이어서 진행할 수 있어요.</p>
 {% endblock %}
