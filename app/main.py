@@ -343,6 +343,11 @@ def participant_entry(
 
 def _render_status(request: Request, rnd: Round, me: Participant) -> HTMLResponse:
     """참가자 재접속 시: 진행현황 + 내가 낸 순위 + (확정 시) 내 조."""
+    notice = None
+    if request.query_params.get("closed"):
+        notice = "closed"
+    elif request.query_params.get("saved"):
+        notice = "saved"
     id_to_name = {p.id: p.name for p in rnd.participants}
     my_ranking = [id_to_name[i] for i in (me.preference_json or []) if i in id_to_name]
     my_group: Optional[list[str]] = None
@@ -362,6 +367,7 @@ def _render_status(request: Request, rnd: Round, me: Participant) -> HTMLRespons
             "my_ranking": my_ranking,
             "my_group": my_group,
             "my_group_index": my_group_index,
+            "notice": notice,
         },
     )
 
@@ -373,7 +379,14 @@ def _render_rank_form(request: Request, rnd: Round, me: Participant) -> HTMLResp
         order = {pid: i for i, pid in enumerate(me.preference_json)}
         others.sort(key=lambda p: order.get(p.id, 999))
     return templates.TemplateResponse(
-        "participant_rank.html", {"request": request, "rnd": rnd, "me": me, "others": others}
+        "participant_rank.html",
+        {
+            "request": request,
+            "rnd": rnd,
+            "me": me,
+            "others": others,
+            "editing": me.submitted,  # 이미 제출한 적 있으면 '수정' 모드
+        },
     )
 
 
@@ -410,7 +423,7 @@ def participant_edit(public_id: str, request: Request, db: Session = Depends(get
     if me is None:
         return RedirectResponse(f"/r/{public_id}")
     if rnd.status == "finalized":
-        return RedirectResponse(f"/r/{public_id}")
+        return RedirectResponse(f"/r/{public_id}?closed=1")
     return _render_rank_form(request, rnd, me)
 
 
@@ -426,7 +439,7 @@ def participant_rank_submit(
     if me is None:
         return RedirectResponse(f"/r/{public_id}")
     if rnd.status == "finalized":
-        return RedirectResponse(f"/r/{public_id}")
+        return RedirectResponse(f"/r/{public_id}?closed=1", status_code=303)
 
     valid_ids = {p.id for p in rnd.participants if p.id != me.id}
     ordered = []
@@ -438,4 +451,4 @@ def participant_rank_submit(
     me.submitted = True
     me.submitted_at = datetime.now(timezone.utc)
     db.commit()
-    return RedirectResponse(f"/r/{public_id}", status_code=303)
+    return RedirectResponse(f"/r/{public_id}?saved=1", status_code=303)

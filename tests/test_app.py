@@ -150,6 +150,47 @@ def test_participant_join_rank_and_reconnect(ctx):
     db.close()
 
 
+def test_edit_mode_header_and_saved_notice(ctx):
+    """수정 모드 화면(수정/취소 표시) + 저장 안내 배너."""
+    client, Session, _ = ctx
+    pid = _create_round(client)
+    db = Session()
+    rnd = db.query(Round).filter_by(public_id=pid).first()
+    parts = {p.name: p.id for p in rnd.participants}
+    db.close()
+    client.post(f"/r/{pid}/join", data={"participant_id": parts["가"]}, follow_redirects=False)
+    order = ",".join(str(parts[n]) for n in ["나", "다", "라", "마", "바", "사", "아"])
+    r = client.post(f"/r/{pid}/rank", data={"order": order}, follow_redirects=False)
+    assert "saved=1" in r.headers["location"]  # 제출 후 저장 안내로 이동
+
+    # 수정 화면: '수정' 표시 + 취소 버튼
+    r = client.get(f"/r/{pid}/edit")
+    assert "수정" in r.text
+    assert "취소" in r.text
+    # 저장 안내 배너
+    r = client.get(f"/r/{pid}?saved=1")
+    assert "저장됐어요" in r.text
+
+
+def test_edit_blocked_after_finalize_shows_closed(ctx):
+    """확정 후 수정 시도 → 마감 안내로 유도."""
+    client, Session, _ = ctx
+    pid = _create_round(client, group_count=2)
+    db = Session()
+    rnd = db.query(Round).filter_by(public_id=pid).first()
+    gaid = next(p.id for p in rnd.participants if p.name == "가")
+    db.close()
+    client.post(f"/r/{pid}/join", data={"participant_id": gaid}, follow_redirects=False)
+    _fill_all_preferences(Session, pid)
+    client.post(f"/rounds/{pid}/finalize", follow_redirects=False)
+
+    r = client.get(f"/r/{pid}/edit", follow_redirects=False)
+    assert r.status_code in (302, 303, 307)
+    assert "closed=1" in r.headers["location"]
+    r = client.get(f"/r/{pid}?closed=1")
+    assert "마감" in r.text
+
+
 def test_claimed_name_cannot_be_taken_twice(ctx):
     client, Session, _ = ctx
     pid = _create_round(client)
