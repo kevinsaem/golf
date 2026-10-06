@@ -18,6 +18,20 @@
   </div>
 
   <div>
+    <label class="block text-sm font-semibold text-slate-700 mb-1.5">자동 마감 시간</label>
+    <select name="auto_close_minutes"
+      class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-grass-500 outline-none bg-white">
+      <option value="30">30분</option>
+      <option value="60" selected>1시간</option>
+      <option value="90">1시간 30분</option>
+      <option value="120">2시간</option>
+      <option value="150">2시간 30분</option>
+      <option value="180">3시간</option>
+    </select>
+    <p class="mt-1 text-xs text-slate-400">첫 참가자가 순위를 낸 시점부터 이 시간이 지나면 <b>자동 마감</b>돼요. (그때까지 응답한 사람 기준으로 조편성 확정)</p>
+  </div>
+
+  <div>
     <label class="block text-sm font-semibold text-slate-700 mb-1.5">참석자 명단</label>
     <textarea name="names" rows="8" required placeholder="한 줄에 한 명씩 이름을 적어주세요&#10;홍길동&#10;김철수&#10;이영희 ..."
       class="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-grass-500 outline-none"></textarea>

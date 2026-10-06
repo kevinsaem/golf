@@ -392,6 +392,75 @@ def test_edit_blocked_when_finalized(ctx):
     assert r.status_code == 400
 
 
+def test_deadline_set_on_first_submission(ctx):
+    """첫 제출 시 마감 카운트다운(deadline)이 설정된다."""
+    from app.tasks import utcnow
+
+    client, Session, _ = ctx
+    pid = _create_round(client, names=["가", "나", "다", "라"], group_count=2)
+    db = Session()
+    rnd = db.query(Round).filter_by(public_id=pid).first()
+    assert rnd.deadline is None
+    ids = {p.name: p.id for p in rnd.participants}
+    acm = rnd.auto_close_minutes
+    db.close()
+
+    c = TestClient(app)
+    c.post(f"/r/{pid}/join", data={"participant_id": ids["가"]}, follow_redirects=False)
+    c.post(f"/r/{pid}/rank", data={"order": f"{ids['나']},{ids['다']},{ids['라']}"}, follow_redirects=False)
+
+    db = Session()
+    rnd = db.query(Round).filter_by(public_id=pid).first()
+    assert rnd.deadline is not None
+    delta = (rnd.deadline - utcnow()).total_seconds()
+    assert acm * 60 - 120 < delta <= acm * 60 + 5  # 대략 설정 시간 뒤
+    db.close()
+
+
+def test_auto_close_finalizes_when_due(ctx, monkeypatch):
+    """마감 시각이 지나면 접속 시 자동 확정되고 주최자에게 1회 메일."""
+    from datetime import timedelta
+
+    import app.tasks as t
+
+    client, Session, _ = ctx
+    calls = []
+    monkeypatch.setattr(t, "send_email", lambda *a, **k: calls.append(a) or True)
+    pid = _create_round(client, group_count=2)
+    _fill_all_preferences(Session, pid)
+
+    db = Session()
+    rnd = db.query(Round).filter_by(public_id=pid).first()
+    rnd.deadline = t.utcnow() - timedelta(minutes=1)  # 이미 지난 마감
+    db.commit()
+    db.close()
+
+    anon = TestClient(app)  # 아무나 접속해도 자동 확정 트리거
+    r = anon.get(f"/r/{pid}")
+    assert r.status_code == 200
+
+    db = Session()
+    rnd = db.query(Round).filter_by(public_id=pid).first()
+    assert rnd.status == "finalized"
+    assert rnd.result_json is not None
+    db.close()
+    assert len(calls) == 1  # 주최자 자동마감 메일 1회
+
+
+def test_create_round_cleans_close_minutes_to_30_step(ctx):
+    client, Session, _ = ctx
+    r = client.post(
+        "/rounds",
+        data={"title": "t", "group_count": 2, "names": "가\n나\n다\n라", "auto_close_minutes": 50},
+        follow_redirects=False,
+    )
+    pid = r.headers["location"].split("/")[2]
+    db = Session()
+    rnd = db.query(Round).filter_by(public_id=pid).first()
+    assert rnd.auto_close_minutes == 30  # 50 → 30분 단위로 내림
+    db.close()
+
+
 def test_outsider_cannot_manage_round(ctx):
     client, Session, org_id = ctx
     pid = _create_round(client)

@@ -61,6 +61,9 @@ class Round(Base):
     mutual_bonus: Mapped[float] = mapped_column(Float, default=1.0)
     status: Mapped[str] = mapped_column(String(16), default="collecting")  # collecting / finalized
     result_json: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    # 자동 마감: 주최자가 정한 시간(분, 30분 단위). 첫 제출 시점부터 카운트다운.
+    auto_close_minutes: Mapped[int] = mapped_column(Integer, default=60)
+    deadline: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)  # 첫 제출 시 설정(UTC naive)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
 
     organizer: Mapped["Organizer"] = relationship(back_populates="rounds")

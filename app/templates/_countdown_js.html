@@ -1,0 +1,23 @@
+<script>
+(function () {
+  var el = document.getElementById('cd-timer');
+  var iso = {{ (deadline_iso | tojson) if deadline_iso else 'null' }};
+  if (!el || !iso) return;
+  var dl = new Date(iso).getTime();
+  var done = false;
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function tick() {
+    var diff = dl - Date.now();
+    if (diff <= 0) {
+      el.textContent = '마감 처리 중…';
+      if (!done) { done = true; setTimeout(function () { location.reload(); }, 400); }
+      return;
+    }
+    var m = Math.floor(diff / 60000);
+    var s = Math.floor((diff % 60000) / 1000);
+    el.textContent = m + '분 ' + pad(s) + '초';
+  }
+  tick();
+  setInterval(tick, 1000);
+})();
+</script>

@@ -44,24 +44,48 @@
 </div>
 
 {% if rnd.status != 'finalized' %}
-<!-- 자동 배정 버튼 -->
-<form method="post" action="/rounds/{{ rnd.public_id }}/finalize" class="mt-6">
-  <button type="submit" class="w-full bg-grass-600 text-white font-bold rounded-xl px-5 py-3.5 shadow-sm active:scale-[0.99] transition {{ '' if rnd.submitted_count else 'opacity-60' }}">
-    ⚡ 자동 조편성 하기
-  </button>
-  {% if not rnd.all_submitted %}
-  <p class="mt-2 text-center text-xs text-amber-600">아직 모두 등록하지 않았어요. 지금 눌러도 되지만, 전원 등록 후가 가장 정확해요.</p>
+<!-- 자동 마감 카운트다운 -->
+<div class="mt-6 rounded-xl border border-grass-200 bg-grass-50 p-4 text-center">
+  {% if deadline_iso %}
+  <p class="text-xs text-grass-700">자동 마감까지</p>
+  <p id="cd-timer" class="text-2xl font-extrabold text-grass-800 mt-0.5">계산 중…</p>
+  {% else %}
+  <p class="text-sm text-slate-500">첫 참가자가 순위를 내면 <b>{{ rnd.auto_close_minutes }}분</b> 카운트다운이 시작돼요.</p>
   {% endif %}
+  {% if non_responders %}
+  <p class="mt-2 text-xs text-slate-500">미응답 {{ non_responders|length }}명: <span class="text-slate-600">{{ non_responders|join(', ') }}</span></p>
+  {% else %}
+  <p class="mt-2 text-xs text-grass-700">전원 응답 완료 ✅</p>
+  {% endif %}
+</div>
+
+<!-- 자동 배정 버튼 (즉시 확정 override) -->
+<form method="post" action="/rounds/{{ rnd.public_id }}/finalize" class="mt-4">
+  <button type="submit" class="w-full bg-grass-600 text-white font-bold rounded-xl px-5 py-3.5 shadow-sm active:scale-[0.99] transition {{ '' if rnd.submitted_count else 'opacity-60' }}"
+    onclick="return confirm('지금 바로 마감하고 조편성을 확정할까요? (자동 마감 시간을 기다리지 않습니다)')">
+    ⚡ 지금 바로 확정하기
+  </button>
+  <p class="mt-2 text-center text-xs text-slate-400">기다리면 마감 시간에 자동 확정돼요. 더 빨리 끝내려면 이 버튼을 누르세요.</p>
 </form>
 
 <!-- 명단 수정 -->
 <details class="mt-5 bg-white border border-slate-200 rounded-xl p-4">
   <summary class="text-sm font-semibold text-slate-600 cursor-pointer">✏️ 명단 수정 (이름 고치기 · 추가 · 삭제)</summary>
   <form method="post" action="/rounds/{{ rnd.public_id }}/participants" class="mt-4 space-y-3">
-    <div>
-      <label class="block text-xs font-semibold text-slate-500 mb-1">조 개수</label>
-      <input name="group_count" type="number" min="1" value="{{ rnd.group_count }}"
-        class="w-24 border border-slate-300 rounded-lg px-3 py-2 text-sm">
+    <div class="flex gap-4">
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 mb-1">조 개수</label>
+        <input name="group_count" type="number" min="1" value="{{ rnd.group_count }}"
+          class="w-24 border border-slate-300 rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 mb-1">자동 마감</label>
+        <select name="auto_close_minutes" class="border border-slate-300 rounded-lg px-2 py-2 text-sm bg-white">
+          {% for m in [30, 60, 90, 120, 150, 180] %}
+          <option value="{{ m }}" {{ 'selected' if rnd.auto_close_minutes == m else '' }}>{{ m }}분</option>
+          {% endfor %}
+        </select>
+      </div>
     </div>
     <div class="space-y-2">
       {% for p in rnd.participants %}
@@ -100,20 +124,6 @@
   </div>
   {% endfor %}
 
-  <!-- 희망 반영 현황 (투명성) -->
-  <details class="mt-2 bg-slate-50 rounded-xl p-4">
-    <summary class="text-sm font-semibold text-slate-600 cursor-pointer">누구 희망이 반영됐는지 보기</summary>
-    <ul class="mt-3 space-y-2 text-xs text-slate-500">
-      {% for pr in res.per_person %}
-      <li>
-        <b class="text-slate-700">{{ pr.name }}</b>
-        {% if pr.got_top_choice %}<span class="text-grass-600">★1지망과 같은 조</span>{% endif %}
-        → {% for m in pr.mates %}{{ m.name }}{% if m.rank %}({{ m.rank }}지망{% if m.mutual %}·서로{% endif %}){% endif %}{% if not loop.last %}, {% endif %}{% endfor %}
-      </li>
-      {% endfor %}
-    </ul>
-  </details>
-
   <!-- 수동 조정: 두 명 맞바꾸기 -->
   <form method="post" action="/rounds/{{ rnd.public_id }}/swap" class="mt-5 bg-white border border-slate-200 rounded-xl p-4">
     <p class="text-sm font-semibold text-slate-600 mb-2">손으로 두 명 자리 바꾸기</p>
@@ -135,4 +145,8 @@
   </form>
 </div>
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% include "_countdown_js.html" %}
 {% endblock %}

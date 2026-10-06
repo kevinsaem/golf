@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import Depends, FastAPI, Form, HTTPException, Request
@@ -17,11 +17,11 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 
-from app import config
+from app import config, tasks
 from app.auth import current_organizer, router as auth_router
 from app.database import get_db, init_db
 from app.models import Organizer, Participant, Round
-from tools.matcher import describe_grouping, match_groups
+from tools.matcher import describe_grouping
 
 
 @asynccontextmanager
@@ -70,35 +70,14 @@ def _require_owner(rnd: Round, organizer: Optional[Organizer]) -> None:
         raise HTTPException(status_code=403, detail="이 라운딩의 주최자만 접근할 수 있습니다.")
 
 
-def _build_preferences(rnd: Round) -> tuple[list[str], dict[str, list[str]]]:
-    """DB 참가자/희망순위 -> 매처가 쓰는 (이름목록, 선호도dict)."""
-    names = [p.name for p in rnd.participants]
-    id_to_name = {p.id: p.name for p in rnd.participants}
-    prefs: dict[str, list[str]] = {}
-    for p in rnd.participants:
-        order = p.preference_json or []
-        prefs[p.name] = [id_to_name[i] for i in order if i in id_to_name]
-    return names, prefs
-
-
-def _serialize_result(total: float, per_person, groups: list[list[str]], exact: bool) -> dict:
+def _countdown_ctx(rnd: Round) -> dict:
+    """마감 카운트다운 + 미응답자 명단 (화면 실시간 표시용)."""
+    deadline_iso = None
+    if rnd.deadline is not None:
+        deadline_iso = rnd.deadline.replace(microsecond=0).isoformat() + "Z"
     return {
-        "groups": groups,
-        "total_score": total,
-        "exact": exact,
-        "per_person": [
-            {
-                "name": pr.name,
-                "group_index": pr.group_index,
-                "got_top_choice": pr.got_top_choice,
-                "satisfied_count": pr.satisfied_count,
-                "best_mate_rank": pr.best_mate_rank,
-                "mates": [
-                    {"name": m.name, "rank": m.rank, "mutual": m.mutual} for m in pr.mates
-                ],
-            }
-            for pr in per_person
-        ],
+        "deadline_iso": deadline_iso,
+        "non_responders": [p.name for p in rnd.participants if not p.submitted],
     }
 
 
@@ -131,12 +110,20 @@ def round_new_form(
     return templates.TemplateResponse("round_new.html", {"request": request, "organizer": organizer})
 
 
+def _clean_close_minutes(value: int) -> int:
+    """자동 마감 시간을 30분 단위(30~360)로 정리."""
+    step = config.AUTO_CLOSE_STEP_MINUTES
+    value = max(step, min(360, int(value)))
+    return (value // step) * step
+
+
 @app.post("/rounds")
 def create_round(
     request: Request,
     title: str = Form(...),
     group_count: int = Form(...),
     names: str = Form(...),
+    auto_close_minutes: int = Form(config.AUTO_CLOSE_DEFAULT_MINUTES),
     db: Session = Depends(get_db),
     organizer: Optional[Organizer] = Depends(current_organizer),
 ):
@@ -161,6 +148,7 @@ def create_round(
         organizer_id=organizer.id,
         title=title.strip() or "골프 라운딩",
         group_count=group_count,
+        auto_close_minutes=_clean_close_minutes(auto_close_minutes),
     )
     for n in unique_names:
         rnd.participants.append(Participant(name=n))
@@ -179,10 +167,17 @@ def round_manage(
 ):
     rnd = _get_round_or_404(db, public_id)
     _require_owner(rnd, organizer)
+    tasks.auto_close_if_due(db, rnd, str(request.base_url))  # 마감시각 지났으면 자동 확정
     share_url = str(request.base_url).rstrip("/") + f"/r/{rnd.public_id}"
     return templates.TemplateResponse(
         "round_manage.html",
-        {"request": request, "organizer": organizer, "rnd": rnd, "share_url": share_url},
+        {
+            "request": request,
+            "organizer": organizer,
+            "rnd": rnd,
+            "share_url": share_url,
+            **_countdown_ctx(rnd),
+        },
     )
 
 
@@ -206,6 +201,10 @@ async def edit_participants(
         group_count = int(form.get("group_count", rnd.group_count))
     except (ValueError, TypeError):
         raise HTTPException(status_code=400, detail="조 개수가 올바르지 않습니다.")
+    try:
+        new_close = _clean_close_minutes(int(form.get("auto_close_minutes", rnd.auto_close_minutes)))
+    except (ValueError, TypeError):
+        new_close = rnd.auto_close_minutes
 
     existing = list(rnd.participants)
     delete_ids = {p.id for p in existing if form.get(f"delete_{p.id}")}
@@ -238,6 +237,11 @@ async def edit_participants(
     for n in new_names:
         rnd.participants.append(Participant(name=n))
     rnd.group_count = group_count
+    # 마감 시간 변경 반영 (이미 카운트다운 중이면 그만큼 마감시각 이동)
+    if new_close != rnd.auto_close_minutes:
+        if rnd.deadline is not None:
+            rnd.deadline = rnd.deadline + timedelta(minutes=(new_close - rnd.auto_close_minutes))
+        rnd.auto_close_minutes = new_close
 
     # 삭제된 사람 참조를 남은 참가자 희망순위에서 제거
     if delete_ids:
@@ -259,14 +263,7 @@ def finalize_round(
 ):
     rnd = _get_round_or_404(db, public_id)
     _require_owner(rnd, organizer)
-
-    names, prefs = _build_preferences(rnd)
-    result = match_groups(names, prefs, group_count=rnd.group_count, mutual_bonus=rnd.mutual_bonus)
-    rnd.result_json = _serialize_result(
-        result.total_score, result.per_person, result.groups, result.exact
-    )
-    rnd.status = "finalized"
-    db.commit()
+    tasks.finalize_round(db, rnd)  # 주최자가 직접 즉시 확정 (메일 없음)
     return RedirectResponse(f"/rounds/{public_id}/manage", status_code=303)
 
 
@@ -307,9 +304,9 @@ def swap_members(
     (ga, ia), (gb, ib) = pos[name_a], pos[name_b]
     groups[ga][ia], groups[gb][ib] = groups[gb][ib], groups[ga][ia]
 
-    _, prefs = _build_preferences(rnd)
+    _, prefs = tasks.build_preferences(rnd)
     total, per_person = describe_grouping(groups, prefs, mutual_bonus=rnd.mutual_bonus)
-    rnd.result_json = _serialize_result(total, per_person, groups, rnd.result_json.get("exact", True))
+    rnd.result_json = tasks.serialize_result(total, per_person, groups, rnd.result_json.get("exact", True))
     db.commit()
     return RedirectResponse(f"/rounds/{public_id}/manage", status_code=303)
 
@@ -329,6 +326,7 @@ def participant_entry(
     public_id: str, request: Request, db: Session = Depends(get_db)
 ):
     rnd = _get_round_or_404(db, public_id)
+    tasks.auto_close_if_due(db, rnd, str(request.base_url))  # 마감시각 지났으면 자동 확정
     me = _identify_participant(request, rnd)
 
     # 확정된 라운딩: 결과는 누구나(이름 선택 없이도) 볼 수 있다. 본인이면 내 조 강조.
@@ -373,6 +371,7 @@ def _render_status(request: Request, rnd: Round, me: Participant) -> HTMLRespons
             "my_group": my_group,
             "my_group_index": my_group_index,
             "notice": notice,
+            **_countdown_ctx(rnd),
         },
     )
 
@@ -454,5 +453,8 @@ def participant_rank_submit(
     me.preference_json = ordered
     me.submitted = True
     me.submitted_at = datetime.now(timezone.utc)
+    # 첫 제출이면 자동 마감 카운트다운 시작
+    if rnd.deadline is None:
+        rnd.deadline = tasks.utcnow() + timedelta(minutes=rnd.auto_close_minutes)
     db.commit()
     return RedirectResponse(f"/r/{public_id}?saved=1", status_code=303)

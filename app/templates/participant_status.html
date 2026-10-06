@@ -62,6 +62,16 @@
       <div class="bg-grass-500 h-2.5 rounded-full" style="width: {{ (rnd.submitted_count / rnd.total_count * 100) if rnd.total_count else 0 }}%"></div>
     </div>
   </div>
+
+  {% if deadline_iso %}
+  <div class="mt-4 text-center border-t border-grass-100 pt-3">
+    <p class="text-xs text-grass-700">자동 마감까지</p>
+    <p id="cd-timer" class="text-xl font-extrabold text-grass-800">계산 중…</p>
+  </div>
+  {% endif %}
+  {% if non_responders %}
+  <p class="mt-3 text-xs text-slate-500">아직 안 낸 사람 {{ non_responders|length }}명: {{ non_responders|join(', ') }}</p>
+  {% endif %}
 </div>
 
 {% if me.submitted and my_ranking %}
@@ -80,4 +90,8 @@
   {{ '순위 수정하기' if me.submitted else '지금 순위 정하기' }}
 </a>
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% include "_countdown_js.html" %}
 {% endblock %}
