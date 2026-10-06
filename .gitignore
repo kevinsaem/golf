@@ -1,0 +1,37 @@
+# 비밀 / 인증 (절대 커밋 금지)
+.env
+.env.*
+credentials.json
+token.json
+.ftp_config.json
+*.pem
+*.key
+
+# 파이썬
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# 데이터베이스 (로컬)
+*.db
+*.sqlite
+*.sqlite3
+
+# OS / 에디터
+.DS_Store
+.idea/
+.vscode/
+
+# 작업 공간
+.tmp/
+node_modules/
+
+# Playwright
+/test-results/
+/playwright-report/
