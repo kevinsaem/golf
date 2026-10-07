@@ -89,9 +89,6 @@
 <a href="/r/{{ rnd.public_id }}/edit" class="mt-6 block w-full text-center font-semibold rounded-xl px-5 py-3.5 transition active:scale-[0.99] {{ 'border border-slate-300 text-slate-700' if me.submitted else 'bg-grass-600 text-white shadow-sm' }}">
   {{ '순위 수정하기' if me.submitted else '지금 순위 정하기' }}
 </a>
-
-{# 대기 중엔 30초마다 새로고침 → 전원 완료로 확정되면 결과가 곧 자동 표시 #}
-<script>setTimeout(function () { location.reload(); }, 30000);</script>
 {% endif %}
 {% endblock %}
 

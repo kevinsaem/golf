@@ -197,9 +197,7 @@ def round_manage(
     if organizer is None:  # 로그인 안 했으면 로그인 후 이 페이지로 복귀
         return RedirectResponse(f"/login?next=/rounds/{public_id}/manage")
     _require_owner(rnd, organizer)
-    # 전원 제출됐거나 마감시각 지났으면 자동 확정 (기존 라운딩도 열람 시 반영)
-    tasks.finalize_all_submitted(db, rnd, str(request.base_url))
-    tasks.auto_close_if_due(db, rnd, str(request.base_url))
+    tasks.auto_close_if_due(db, rnd, str(request.base_url))  # 마감시각이 지났으면 자동 확정
     share_url = str(request.base_url).rstrip("/") + f"/r/{rnd.public_id}"
     return templates.TemplateResponse(
         "round_manage.html",
@@ -372,9 +370,7 @@ def participant_entry(
     public_id: str, request: Request, db: Session = Depends(get_db)
 ):
     rnd = _get_round_or_404(db, public_id)
-    # 전원 제출됐거나 마감시각 지났으면 자동 확정 (기존 라운딩도 열람 시 반영)
-    tasks.finalize_all_submitted(db, rnd, str(request.base_url))
-    tasks.auto_close_if_due(db, rnd, str(request.base_url))
+    tasks.auto_close_if_due(db, rnd, str(request.base_url))  # 마감시각이 지났으면 자동 확정
     me = _identify_participant(request, rnd)
 
     # 확정된 라운딩: 결과는 누구나(이름 선택 없이도) 볼 수 있다. 본인이면 내 조 강조.
@@ -508,6 +504,4 @@ def participant_rank_submit(
     if rnd.deadline is None:
         rnd.deadline = tasks.utcnow() + timedelta(minutes=rnd.auto_close_minutes)
     db.commit()
-    # 전원 제출됐으면 마감시간 안 기다리고 즉시 확정 → 바로 결과 표시
-    tasks.finalize_all_submitted(db, rnd, str(request.base_url))
     return RedirectResponse(f"/r/{public_id}?saved=1", status_code=303)

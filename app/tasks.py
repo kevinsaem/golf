@@ -99,15 +99,6 @@ def _notify_closed(rnd: Round, base_url: str, reason: str = "deadline") -> None:
     send_email(organizer.email, subject, text, html)
 
 
-def finalize_all_submitted(db: Session, rnd: Round, base_url: str) -> bool:
-    """참가자 전원이 제출했으면 마감시간 안 기다리고 즉시 확정 + 주최자 메일."""
-    if rnd.status != "collecting" or not rnd.all_submitted:
-        return False
-    finalize_round(db, rnd)
-    _notify_closed(rnd, base_url, reason="all")
-    return True
-
-
 def auto_close_if_due(db: Session, rnd: Round, base_url: str) -> bool:
     """마감시각이 지났으면 자동 확정 + 주최자 메일. 확정했으면 True."""
     if rnd.status != "collecting" or rnd.deadline is None:
@@ -121,14 +112,14 @@ def auto_close_if_due(db: Session, rnd: Round, base_url: str) -> bool:
 
 def close_due_rounds(db: Session, base_url: str) -> int:
     """자동 확정 대상(전원 제출 or 마감시간 경과)을 모두 확정(크론용). 처리 건수 반환."""
-    rounds = db.query(Round).filter(Round.status == "collecting").all()
+    rounds = (
+        db.query(Round)
+        .filter(Round.status == "collecting", Round.deadline.isnot(None))
+        .all()
+    )
     count = 0
     for rnd in rounds:
-        if rnd.all_submitted:
-            finalize_round(db, rnd)
-            _notify_closed(rnd, base_url, reason="all")
-            count += 1
-        elif rnd.deadline is not None and utcnow() >= rnd.deadline:
+        if rnd.deadline is not None and utcnow() >= rnd.deadline:
             finalize_round(db, rnd)
             _notify_closed(rnd, base_url, reason="deadline")
             count += 1

@@ -532,68 +532,49 @@ def test_outsider_cannot_delete_round(ctx):
     db.close()
 
 
-def test_all_submitted_finalizes_immediately(ctx, monkeypatch):
-    """전원이 순위를 내면 마감시간을 안 기다리고 즉시 확정된다."""
-    import app.tasks as t
-
+def test_all_submitted_waits_for_deadline(ctx):
+    """전원이 순위를 내도 마감시간 전이면 확정하지 않고 기다린다(마감시간에만 확정)."""
     client, Session, _ = ctx
-    monkeypatch.setattr(t, "send_email", lambda *a, **k: True)
     pid = _create_round(client, names=["가", "나"], group_count=1)
     db = Session()
-    rnd = db.query(Round).filter_by(public_id=pid).first()
-    ids = {p.name: p.id for p in rnd.participants}
+    ids = {p.name: p.id for p in db.query(Round).filter_by(public_id=pid).first().participants}
     db.close()
+    for name in ["가", "나"]:
+        c = TestClient(app)
+        c.post(f"/r/{pid}/join", data={"participant_id": ids[name]}, follow_redirects=False)
+        others = ",".join(str(ids[n]) for n in ids if n != name)
+        c.post(f"/r/{pid}/rank", data={"order": others}, follow_redirects=False)
 
-    c1 = TestClient(app)
-    c1.post(f"/r/{pid}/join", data={"participant_id": ids["가"]}, follow_redirects=False)
-    c1.post(f"/r/{pid}/rank", data={"order": str(ids["나"])}, follow_redirects=False)
-    db = Session()
-    assert db.query(Round).filter_by(public_id=pid).first().status == "collecting"  # 1/2
-    db.close()
-
-    c2 = TestClient(app)
-    c2.post(f"/r/{pid}/join", data={"participant_id": ids["나"]}, follow_redirects=False)
-    c2.post(f"/r/{pid}/rank", data={"order": str(ids["가"])}, follow_redirects=False)
     db = Session()
     rnd = db.query(Round).filter_by(public_id=pid).first()
-    assert rnd.status == "finalized"  # 2/2 → 즉시 확정
-    assert rnd.result_json is not None
+    assert rnd.status == "collecting"  # 전원 제출됐어도 마감 전이라 대기
+    assert rnd.all_submitted and rnd.deadline is not None
     db.close()
 
 
-def test_existing_all_submitted_round_finalizes_on_view(ctx, monkeypatch):
-    """이미 8/8인 기존 라운딩(마감시각 없음)을 열람하면 자동 확정된다."""
+def test_sweep_only_finalizes_when_deadline_passed(ctx, monkeypatch):
+    """크론 sweep은 마감시각이 지난 것만 확정하고, 전원제출만으론 확정하지 않는다."""
+    from datetime import timedelta
+
     import app.tasks as t
 
     client, Session, _ = ctx
     monkeypatch.setattr(t, "send_email", lambda *a, **k: True)
     pid = _create_round(client, group_count=2)
-    _fill_all_preferences(Session, pid)  # 전원 제출, deadline 없음(기존 라운딩처럼)
+    _fill_all_preferences(Session, pid)  # 전원 제출, deadline 없음
+
+    db = Session()
+    assert t.close_due_rounds(db, "http://t") == 0  # 마감시각 없으면 확정 안 함
+    db.close()
+
     db = Session()
     rnd = db.query(Round).filter_by(public_id=pid).first()
-    assert rnd.status == "collecting" and rnd.deadline is None
+    rnd.deadline = t.utcnow() - timedelta(minutes=1)  # 마감 지남
+    db.commit()
     db.close()
-
-    anon = TestClient(app)
-    r = anon.get(f"/r/{pid}")  # 열람만 해도
-    assert r.status_code == 200
     db = Session()
-    assert db.query(Round).filter_by(public_id=pid).first().status == "finalized"
+    assert t.close_due_rounds(db, "http://t") == 1
     db.close()
-
-
-def test_sweep_finalizes_all_submitted_without_deadline(ctx, monkeypatch):
-    """크론 sweep이 마감시각 없는 전원완료 라운딩도 확정한다."""
-    import app.tasks as t
-
-    client, Session, _ = ctx
-    monkeypatch.setattr(t, "send_email", lambda *a, **k: True)
-    pid = _create_round(client, group_count=2)
-    _fill_all_preferences(Session, pid)
-    db = Session()
-    n = t.close_due_rounds(db, "http://t")
-    db.close()
-    assert n == 1
     db = Session()
     assert db.query(Round).filter_by(public_id=pid).first().status == "finalized"
     db.close()
@@ -611,7 +592,9 @@ def test_manage_redirects_to_login_when_not_logged_in(ctx):
 
 
 def test_notify_email_links_to_public_result(ctx, monkeypatch):
-    """확정 알림 메일이 로그인 없이 열리는 결과 페이지(/r/..)를 가리킨다."""
+    """마감 자동확정 알림 메일이 로그인 없이 열리는 결과 페이지(/r/..)를 가리킨다."""
+    from datetime import timedelta
+
     import app.tasks as t
 
     client, Session, _ = ctx
@@ -620,16 +603,16 @@ def test_notify_email_links_to_public_result(ctx, monkeypatch):
         t, "send_email",
         lambda to, subj, text, html=None: captured.update(text=text, html=html) or True,
     )
-    pid = _create_round(client, names=["가", "나"], group_count=1)
+    pid = _create_round(client, group_count=2)
+    _fill_all_preferences(Session, pid)
     db = Session()
-    ids = {p.name: p.id for p in db.query(Round).filter_by(public_id=pid).first().participants}
+    rnd = db.query(Round).filter_by(public_id=pid).first()
+    rnd.deadline = t.utcnow() - timedelta(minutes=1)  # 마감 지남 → 자동확정+메일
+    db.commit()
     db.close()
-    c1 = TestClient(app)
-    c1.post(f"/r/{pid}/join", data={"participant_id": ids["가"]}, follow_redirects=False)
-    c1.post(f"/r/{pid}/rank", data={"order": str(ids["나"])}, follow_redirects=False)
-    c2 = TestClient(app)
-    c2.post(f"/r/{pid}/join", data={"participant_id": ids["나"]}, follow_redirects=False)
-    c2.post(f"/r/{pid}/rank", data={"order": str(ids["가"])}, follow_redirects=False)
+
+    anon = TestClient(app)
+    anon.get(f"/r/{pid}")  # 열람 시 자동확정 트리거
     assert f"/r/{pid}" in captured.get("text", "")
     assert f"/r/{pid}" in captured.get("html", "")
 
