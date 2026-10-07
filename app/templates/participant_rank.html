@@ -5,7 +5,7 @@
   <h1 class="text-lg font-extrabold text-slate-900">
     {{ me.name }}님의 희망 순위{% if editing %} <span class="text-grass-600">수정</span>{% endif %}
   </h1>
-  <p class="mt-1 text-sm text-slate-500">같이 치고 싶은 사람일수록 <b>앞 번호</b>로. 오른쪽 <b>≡ 손잡이</b>를 잡고 옮기세요. (번호 1번이 1지망)</p>
+  <p class="mt-1 text-sm text-slate-500">같이 치고 싶은 사람일수록 <b>위로</b>. <b>▲▼ 버튼</b>으로 옮기거나, 꾹 눌러서 끌어도 돼요. (맨 위가 1지망)</p>
   {% if editing %}
   <div class="mt-2 text-xs bg-slate-50 text-slate-500 rounded-lg px-3 py-2">현재 저장된 순서예요. 바꾼 뒤 아래 버튼을 누르면 수정돼요.</div>
   {% endif %}
@@ -13,13 +13,15 @@
 
 <form method="post" action="/r/{{ rnd.public_id }}/rank" onsubmit="fillOrder()">
   <input type="hidden" name="order" id="order">
-  <ul id="rankList" class="grid grid-cols-2 gap-2">
+  <ul id="rankList" class="space-y-2">
     {% for o in others %}
     <li data-id="{{ o.id }}"
-      class="flex items-center gap-2 bg-white border border-slate-200 rounded-xl pl-2 pr-1 py-2.5 shadow-sm">
-      <span class="rank-badge flex-none w-6 h-6 rounded-full bg-grass-600 text-white text-xs font-bold grid place-items-center"></span>
-      <span class="flex-1 font-medium text-slate-800 text-sm truncate">{{ o.name }}</span>
-      <span class="drag-handle flex-none grid place-items-center w-8 h-8 text-slate-300 text-lg cursor-grab touch-none" aria-label="순서 이동 손잡이">≡</span>
+      class="flex items-center gap-2 bg-white border border-slate-200 rounded-xl pl-3 pr-2 py-2.5 shadow-sm select-none">
+      <span class="rank-badge flex-none w-7 h-7 rounded-full bg-grass-600 text-white text-sm font-bold grid place-items-center"></span>
+      <span class="flex-1 font-medium text-slate-800 truncate">{{ o.name }}</span>
+      <span class="drag-cue flex-none text-slate-300 text-lg px-1">⠿</span>
+      <button type="button" class="move-up flex-none w-9 h-9 grid place-items-center rounded-lg border border-slate-200 text-slate-500 active:bg-grass-50" aria-label="위로">▲</button>
+      <button type="button" class="move-down flex-none w-9 h-9 grid place-items-center rounded-lg border border-slate-200 text-slate-500 active:bg-grass-50" aria-label="아래로">▼</button>
     </li>
     {% endfor %}
   </ul>
@@ -40,16 +42,32 @@
 <script>
   const list = document.getElementById('rankList');
   function renumber() {
-    [...list.children].forEach((li, i) => {
-      li.querySelector('.rank-badge').textContent = i + 1;
-    });
+    [...list.children].forEach((li, i) => { li.querySelector('.rank-badge').textContent = i + 1; });
   }
   function fillOrder() {
-    document.getElementById('order').value =
-      [...list.children].map(li => li.dataset.id).join(',');
+    document.getElementById('order').value = [...list.children].map(li => li.dataset.id).join(',');
   }
-  // handle 로만 드래그 시작 → 목록을 그냥 터치하면 스크롤, 손잡이를 잡아야 순위 이동
-  new Sortable(list, { animation: 150, handle: '.drag-handle', onEnd: renumber });
+  // ▲▼ 버튼으로 순서 이동 (드래그 못해도 100% 동작)
+  list.addEventListener('click', function (e) {
+    const li = e.target.closest('li');
+    if (!li) return;
+    if (e.target.closest('.move-up') && li.previousElementSibling) {
+      list.insertBefore(li, li.previousElementSibling); renumber();
+    } else if (e.target.closest('.move-down') && li.nextElementSibling) {
+      list.insertBefore(li.nextElementSibling, li); renumber();
+    }
+  });
+  // 드래그: 모바일에 강한 fallback + 꾹 눌러서 끌기(스크롤과 구분), 버튼은 드래그 제외
+  new Sortable(list, {
+    animation: 150,
+    forceFallback: true,
+    delay: 150,
+    delayOnTouchOnly: true,
+    touchStartThreshold: 5,
+    filter: '.move-up, .move-down',
+    preventOnFilter: false,
+    onEnd: renumber,
+  });
   renumber();
 </script>
 {% endblock %}

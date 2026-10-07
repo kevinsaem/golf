@@ -152,6 +152,8 @@ def test_participant_join_rank_and_reconnect(ctx):
     # 이제 순위 입력 폼
     r = client.get(f"/r/{pid}")
     assert "희망 순위" in r.text
+    assert "move-up" in r.text and "move-down" in r.text  # ▲▼ 순서이동 버튼
+    assert "Sortable" in r.text  # 드래그도 가능
 
     # 순위 제출 (나,다,라... 순서)
     order = ",".join(str(parts[n]) for n in ["나", "다", "라", "마", "바", "사", "아"])
