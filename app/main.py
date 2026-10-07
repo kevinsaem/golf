@@ -11,7 +11,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import Depends, FastAPI, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -41,6 +41,33 @@ app.include_router(auth_router)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
 templates.env.globals["APP_BASE_URL"] = config.APP_BASE_URL
+templates.env.globals["GOOGLE_SITE_VERIFICATION"] = config.GOOGLE_SITE_VERIFICATION
+templates.env.globals["NAVER_SITE_VERIFICATION"] = config.NAVER_SITE_VERIFICATION
+
+
+@app.get("/robots.txt", response_class=PlainTextResponse)
+def robots_txt():
+    return (
+        "User-agent: *\n"
+        "Disallow: /r/\n"
+        "Disallow: /rounds\n"
+        "Disallow: /login\n"
+        "Disallow: /logout\n"
+        "Disallow: /auth\n"
+        f"Sitemap: {config.APP_BASE_URL}/sitemap.xml\n"
+    )
+
+
+@app.get("/sitemap.xml")
+def sitemap_xml():
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        f"  <url><loc>{config.APP_BASE_URL}/</loc>"
+        "<changefreq>monthly</changefreq><priority>1.0</priority></url>\n"
+        "</urlset>\n"
+    )
+    return Response(content=xml, media_type="application/xml")
 
 
 @app.middleware("http")

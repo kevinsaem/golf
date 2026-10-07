@@ -77,6 +77,29 @@ def test_dashboard_shown_when_logged_in(ctx):
     assert "새 라운딩 만들기" in r.text
 
 
+def test_landing_intro_and_seo_when_logged_out(ctx):
+    """로그아웃 방문자(검색봇)에게 소개·사용법·SEO 메타가 보인다."""
+    client, _, _ = ctx
+    app.dependency_overrides[current_organizer] = lambda: None
+    r = client.get("/")
+    assert "티메이트가 뭔가요?" in r.text
+    assert "이렇게 써요" in r.text
+    assert 'name="description"' in r.text
+    assert 'name="keywords"' in r.text
+    assert "application/ld+json" in r.text  # 구조화 데이터
+
+
+def test_robots_and_sitemap(ctx):
+    client, _, _ = ctx
+    r = client.get("/robots.txt")
+    assert r.status_code == 200
+    assert "Sitemap:" in r.text
+    assert "Disallow: /r/" in r.text
+    s = client.get("/sitemap.xml")
+    assert s.status_code == 200
+    assert "<urlset" in s.text and "/sitemap" not in s.text.split("urlset")[0]
+
+
 def test_create_round_and_manage_page(ctx):
     client, Session, _ = ctx
     pid = _create_round(client)

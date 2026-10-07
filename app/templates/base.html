@@ -4,6 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <title>{% block title %}티메이트{% endblock %}</title>
+
+  {# --- 검색엔진(SEO) --- #}
+  <meta name="description" content="{{ meta_description | default('티메이트는 골프 라운딩 조편성(조 짜기)을 자동으로 해주는 무료 웹서비스입니다. 참가자들이 같이 치고 싶은 순서만 정하면 모두의 희망을 반영한 최적의 조를 자동으로 만들어 줍니다.') }}">
+  <meta name="keywords" content="골프 조편성, 골프 라운딩, 조편성, 조 짜기, 골프 조 나누기, 골프 조짜기, 골프 모임, 라운딩 매칭, 팀 편성, 티타임, 골프 팀 나누기, 골프 조 추첨, 골프 조편성 사이트, 티메이트">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="안산 케빈샘 AI코딩학원">
+  <link rel="canonical" href="{{ canonical_url | default(APP_BASE_URL ~ request.url.path) }}">
+  {% if GOOGLE_SITE_VERIFICATION %}<meta name="google-site-verification" content="{{ GOOGLE_SITE_VERIFICATION }}">{% endif %}
+  {% if NAVER_SITE_VERIFICATION %}<meta name="naver-site-verification" content="{{ NAVER_SITE_VERIFICATION }}">{% endif %}
+
   <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
   <link rel="icon" type="image/png" sizes="192x192" href="/static/favicon-192.png">
   <link rel="apple-touch-icon" href="/static/favicon-192.png">
@@ -33,6 +43,7 @@
       50:'#f0fdf4',100:'#dcfce7',500:'#22c55e',600:'#16a34a',700:'#15803d',800:'#166534'
     }}}}}
   </script>
+  {% block head_extra %}{% endblock %}
 </head>
 <body class="bg-grass-50 min-h-screen text-slate-800 antialiased">
   <div class="max-w-md mx-auto min-h-screen bg-white shadow-sm flex flex-col">
