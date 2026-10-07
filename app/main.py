@@ -194,6 +194,8 @@ def round_manage(
     organizer: Optional[Organizer] = Depends(current_organizer),
 ):
     rnd = _get_round_or_404(db, public_id)
+    if organizer is None:  # 로그인 안 했으면 로그인 후 이 페이지로 복귀
+        return RedirectResponse(f"/login?next=/rounds/{public_id}/manage")
     _require_owner(rnd, organizer)
     # 전원 제출됐거나 마감시각 지났으면 자동 확정 (기존 라운딩도 열람 시 반영)
     tasks.finalize_all_submitted(db, rnd, str(request.base_url))

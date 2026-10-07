@@ -69,7 +69,9 @@ def _notify_closed(rnd: Round, base_url: str, reason: str = "deadline") -> None:
     organizer = rnd.organizer
     if not organizer or not organizer.email:
         return
-    url = base_url.rstrip("/") + f"/rounds/{rnd.public_id}/manage"
+    base = base_url.rstrip("/")
+    result_url = f"{base}/r/{rnd.public_id}"      # 로그인 없이 누구나 결과 열람
+    manage_url = f"{base}/rounds/{rnd.public_id}/manage"  # 주최자 관리(로그인 필요)
     if reason == "all":
         headline = "참가자 전원이 희망 순위를 등록해서 바로 조편성이 확정됐어요."
         subject = f"[티메이트] '{rnd.title}' 전원 등록 완료 — 조편성이 확정됐어요"
@@ -82,13 +84,16 @@ def _notify_closed(rnd: Round, base_url: str, reason: str = "deadline") -> None:
     text = (
         f"{organizer.name or '주최자'}님,\n\n"
         f"'{rnd.title}' {headline}\n\n"
-        f"▶ 결과 보기: {url}\n\n⛳ 티메이트 (golf.kevinsaem.com)"
+        f"▶ 결과 보기(바로 열림): {result_url}\n"
+        f"▶ 관리/수정(로그인): {manage_url}\n\n⛳ 티메이트 (golf.kevinsaem.com)"
     )
     html = (
         f"<p>{organizer.name or '주최자'}님,</p>"
         f"<p><b>'{rnd.title}'</b> {headline}</p>"
-        f"<p><a href=\"{url}\" style=\"display:inline-block;background:#16a34a;color:#fff;"
+        f"<p><a href=\"{result_url}\" style=\"display:inline-block;background:#16a34a;color:#fff;"
         f"padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold\">🏁 결과 보기</a></p>"
+        f"<p style=\"font-size:13px;color:#64748b\">조를 직접 조정하려면 "
+        f"<a href=\"{manage_url}\">관리 화면</a>(로그인)에서 가능해요.</p>"
         f"<p style=\"color:#94a3b8;font-size:12px\">⛳ 티메이트 · golf.kevinsaem.com</p>"
     )
     send_email(organizer.email, subject, text, html)

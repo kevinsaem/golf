@@ -39,10 +39,18 @@ def current_organizer(
     return db.get(Organizer, oid)
 
 
+def _safe_next(next_url: str) -> str:
+    """로그인 후 돌아갈 내부 경로만 허용(오픈 리다이렉트 방지)."""
+    if next_url and next_url.startswith("/") and not next_url.startswith("//"):
+        return next_url
+    return "/"
+
+
 @router.get("/login")
-async def login(request: Request):
+async def login(request: Request, next: str = "/"):
     if not config.GOOGLE_LOGIN_ENABLED:
         return RedirectResponse("/?error=google_login_disabled")
+    request.session["next"] = _safe_next(next)
     return await oauth.google.authorize_redirect(request, config.OAUTH_REDIRECT_URI)
 
 
@@ -80,7 +88,8 @@ async def auth_callback(request: Request, db: Session = Depends(get_db)):
         db.commit()
 
     request.session["organizer_id"] = organizer.id
-    return RedirectResponse("/")
+    dest = _safe_next(request.session.pop("next", "/"))
+    return RedirectResponse(dest)
 
 
 @router.get("/logout")

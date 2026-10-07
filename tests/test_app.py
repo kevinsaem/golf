@@ -597,6 +597,41 @@ def test_sweep_finalizes_all_submitted_without_deadline(ctx, monkeypatch):
     db.close()
 
 
+def test_manage_redirects_to_login_when_not_logged_in(ctx):
+    """비로그인으로 관리 링크를 열면 403이 아니라 로그인(복귀주소 포함)으로 보낸다."""
+    client, Session, _ = ctx
+    pid = _create_round(client)
+    app.dependency_overrides[current_organizer] = lambda: None
+    r = client.get(f"/rounds/{pid}/manage", follow_redirects=False)
+    assert r.status_code in (302, 303, 307)
+    assert "/login" in r.headers["location"]
+    assert f"next=/rounds/{pid}/manage" in r.headers["location"]
+
+
+def test_notify_email_links_to_public_result(ctx, monkeypatch):
+    """확정 알림 메일이 로그인 없이 열리는 결과 페이지(/r/..)를 가리킨다."""
+    import app.tasks as t
+
+    client, Session, _ = ctx
+    captured = {}
+    monkeypatch.setattr(
+        t, "send_email",
+        lambda to, subj, text, html=None: captured.update(text=text, html=html) or True,
+    )
+    pid = _create_round(client, names=["가", "나"], group_count=1)
+    db = Session()
+    ids = {p.name: p.id for p in db.query(Round).filter_by(public_id=pid).first().participants}
+    db.close()
+    c1 = TestClient(app)
+    c1.post(f"/r/{pid}/join", data={"participant_id": ids["가"]}, follow_redirects=False)
+    c1.post(f"/r/{pid}/rank", data={"order": str(ids["나"])}, follow_redirects=False)
+    c2 = TestClient(app)
+    c2.post(f"/r/{pid}/join", data={"participant_id": ids["나"]}, follow_redirects=False)
+    c2.post(f"/r/{pid}/rank", data={"order": str(ids["가"])}, follow_redirects=False)
+    assert f"/r/{pid}" in captured.get("text", "")
+    assert f"/r/{pid}" in captured.get("html", "")
+
+
 def test_outsider_cannot_manage_round(ctx):
     client, Session, org_id = ctx
     pid = _create_round(client)
