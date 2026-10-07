@@ -559,6 +559,44 @@ def test_all_submitted_finalizes_immediately(ctx, monkeypatch):
     db.close()
 
 
+def test_existing_all_submitted_round_finalizes_on_view(ctx, monkeypatch):
+    """이미 8/8인 기존 라운딩(마감시각 없음)을 열람하면 자동 확정된다."""
+    import app.tasks as t
+
+    client, Session, _ = ctx
+    monkeypatch.setattr(t, "send_email", lambda *a, **k: True)
+    pid = _create_round(client, group_count=2)
+    _fill_all_preferences(Session, pid)  # 전원 제출, deadline 없음(기존 라운딩처럼)
+    db = Session()
+    rnd = db.query(Round).filter_by(public_id=pid).first()
+    assert rnd.status == "collecting" and rnd.deadline is None
+    db.close()
+
+    anon = TestClient(app)
+    r = anon.get(f"/r/{pid}")  # 열람만 해도
+    assert r.status_code == 200
+    db = Session()
+    assert db.query(Round).filter_by(public_id=pid).first().status == "finalized"
+    db.close()
+
+
+def test_sweep_finalizes_all_submitted_without_deadline(ctx, monkeypatch):
+    """크론 sweep이 마감시각 없는 전원완료 라운딩도 확정한다."""
+    import app.tasks as t
+
+    client, Session, _ = ctx
+    monkeypatch.setattr(t, "send_email", lambda *a, **k: True)
+    pid = _create_round(client, group_count=2)
+    _fill_all_preferences(Session, pid)
+    db = Session()
+    n = t.close_due_rounds(db, "http://t")
+    db.close()
+    assert n == 1
+    db = Session()
+    assert db.query(Round).filter_by(public_id=pid).first().status == "finalized"
+    db.close()
+
+
 def test_outsider_cannot_manage_round(ctx):
     client, Session, org_id = ctx
     pid = _create_round(client)

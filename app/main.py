@@ -195,7 +195,9 @@ def round_manage(
 ):
     rnd = _get_round_or_404(db, public_id)
     _require_owner(rnd, organizer)
-    tasks.auto_close_if_due(db, rnd, str(request.base_url))  # 마감시각 지났으면 자동 확정
+    # 전원 제출됐거나 마감시각 지났으면 자동 확정 (기존 라운딩도 열람 시 반영)
+    tasks.finalize_all_submitted(db, rnd, str(request.base_url))
+    tasks.auto_close_if_due(db, rnd, str(request.base_url))
     share_url = str(request.base_url).rstrip("/") + f"/r/{rnd.public_id}"
     return templates.TemplateResponse(
         "round_manage.html",
@@ -368,7 +370,9 @@ def participant_entry(
     public_id: str, request: Request, db: Session = Depends(get_db)
 ):
     rnd = _get_round_or_404(db, public_id)
-    tasks.auto_close_if_due(db, rnd, str(request.base_url))  # 마감시각 지났으면 자동 확정
+    # 전원 제출됐거나 마감시각 지났으면 자동 확정 (기존 라운딩도 열람 시 반영)
+    tasks.finalize_all_submitted(db, rnd, str(request.base_url))
+    tasks.auto_close_if_due(db, rnd, str(request.base_url))
     me = _identify_participant(request, rnd)
 
     # 확정된 라운딩: 결과는 누구나(이름 선택 없이도) 볼 수 있다. 본인이면 내 조 강조.

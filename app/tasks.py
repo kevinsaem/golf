@@ -115,15 +115,15 @@ def auto_close_if_due(db: Session, rnd: Round, base_url: str) -> bool:
 
 
 def close_due_rounds(db: Session, base_url: str) -> int:
-    """마감 지난 모든 라운딩을 자동 확정(크론용). 처리 건수 반환."""
-    rounds = (
-        db.query(Round)
-        .filter(Round.status == "collecting", Round.deadline.isnot(None))
-        .all()
-    )
+    """자동 확정 대상(전원 제출 or 마감시간 경과)을 모두 확정(크론용). 처리 건수 반환."""
+    rounds = db.query(Round).filter(Round.status == "collecting").all()
     count = 0
     for rnd in rounds:
-        if rnd.deadline is not None and utcnow() >= rnd.deadline:
+        if rnd.all_submitted:
+            finalize_round(db, rnd)
+            _notify_closed(rnd, base_url, reason="all")
+            count += 1
+        elif rnd.deadline is not None and utcnow() >= rnd.deadline:
             finalize_round(db, rnd)
             _notify_closed(rnd, base_url, reason="deadline")
             count += 1
