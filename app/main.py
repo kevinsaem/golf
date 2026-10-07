@@ -40,6 +40,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
+templates.env.globals["APP_BASE_URL"] = config.APP_BASE_URL
 
 
 @app.middleware("http")
@@ -349,7 +350,8 @@ def participant_entry(
     # 수집 중: 본인 식별이 안 되면 이름 선택 화면
     if me is None:
         return templates.TemplateResponse(
-            "participant_join.html", {"request": request, "rnd": rnd}
+            "participant_join.html",
+            {"request": request, "rnd": rnd, "og_title": f"{rnd.title} · 티메이트 조편성"},
         )
     if me.submitted:
         return _render_status(request, rnd, me)
@@ -385,6 +387,7 @@ def _render_status(request: Request, rnd: Round, me: Participant) -> HTMLRespons
             "my_group": my_group,
             "my_group_index": my_group_index,
             "notice": notice,
+            "og_title": f"{rnd.title} · 티메이트 조편성",
             **_countdown_ctx(rnd),
         },
     )
@@ -404,6 +407,7 @@ def _render_rank_form(request: Request, rnd: Round, me: Participant) -> HTMLResp
             "me": me,
             "others": others,
             "editing": me.submitted,  # 이미 제출한 적 있으면 '수정' 모드
+            "og_title": f"{rnd.title} · 티메이트 조편성",
         },
     )
 

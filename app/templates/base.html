@@ -7,6 +7,25 @@
   <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
   <link rel="icon" type="image/png" sizes="192x192" href="/static/favicon-192.png">
   <link rel="apple-touch-icon" href="/static/favicon-192.png">
+
+  {# --- SNS 공유 카드 (Open Graph / Twitter) --- #}
+  {% set _ogt = og_title | default('티메이트 — 골프 라운딩 조편성') %}
+  {% set _ogd = og_description | default('희망하는 사람과 같은 조로! 링크 열고 같이 칠 순서만 정하면 끝.') %}
+  {% set _ogi = og_image | default(APP_BASE_URL ~ '/static/og.png') %}
+  {% set _ogu = og_url | default(APP_BASE_URL ~ request.url.path) %}
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="티메이트">
+  <meta property="og:locale" content="ko_KR">
+  <meta property="og:title" content="{{ _ogt }}">
+  <meta property="og:description" content="{{ _ogd }}">
+  <meta property="og:image" content="{{ _ogi }}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="{{ _ogu }}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ _ogt }}">
+  <meta name="twitter:description" content="{{ _ogd }}">
+  <meta name="twitter:image" content="{{ _ogi }}">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <script>
