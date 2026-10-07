@@ -17,16 +17,7 @@
 }
 </script>
 {% endblock %}
-{% block header_right %}
-<a href="https://www.kevinsaem.com" target="_blank" rel="noopener noreferrer"
-   class="flex items-center gap-1.5" title="안산 케빈샘 AI코딩학원">
-  <img src="/static/logo.png" alt="안산 케빈샘 AI코딩학원" class="h-6 w-auto">
-  <span class="leading-tight text-right whitespace-nowrap">
-    <span class="block text-[9px] text-slate-400">made by</span>
-    <span class="block text-[10px] font-bold text-slate-600">안산 케빈샘 AI코딩학원</span>
-  </span>
-</a>
-{% endblock %}
+{% block header_right %}{% include "_academy_badge.html" %}{% endblock %}
 {% block content %}
 <div class="text-center pt-3">
   <div class="text-5xl mb-2">⛳</div>
@@ -55,33 +46,9 @@
     <div class="text-sm bg-amber-50 text-amber-700 rounded-lg px-4 py-3">구글 로그인 준비 중입니다.</div>
     {% endif %}
   </div>
+
+  <a href="/guide" class="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-grass-700">
+    서비스 소개 · 사용 방법 보기 →
+  </a>
 </div>
-
-<!-- 서비스 소개 + 사용법 -->
-<section class="mt-10">
-  <h2 class="text-base font-extrabold text-slate-900">티메이트가 뭔가요?</h2>
-  <p class="mt-2 text-sm text-slate-600 leading-relaxed">
-    골프 라운딩 <b>조편성(조 짜기)</b>을 쉽고 공정하게 해주는 <b>무료</b> 서비스예요.
-    참가자들이 <b>같이 치고 싶은 사람</b> 순서만 정하면, 모두의 희망을 최대한 반영한
-    <b class="text-grass-700">최적의 조</b>를 자동으로 만들어 줍니다.
-    앱 설치 없이 <b>링크 하나</b>로, 눈치싸움·제비뽑기 없이 깔끔하게요.
-  </p>
-
-  <h2 class="mt-7 text-base font-extrabold text-slate-900">이렇게 써요</h2>
-  <ol class="mt-3 space-y-3">
-    <li class="flex gap-3">
-      <span class="flex-none w-7 h-7 rounded-full bg-grass-600 text-white text-sm font-bold grid place-items-center">1</span>
-      <p class="text-sm text-slate-600 leading-relaxed"><b>주최자</b>가 구글 로그인 후 라운딩을 만들어요. (조 개수 · <b>마감 시간</b> · 참석자 명단) → <b>공유 링크</b>가 생겨요.</p>
-    </li>
-    <li class="flex gap-3">
-      <span class="flex-none w-7 h-7 rounded-full bg-grass-600 text-white text-sm font-bold grid place-items-center">2</span>
-      <p class="text-sm text-slate-600 leading-relaxed"><b>참가자</b>는 링크만 열면 돼요(로그인 X). 본인 이름을 고르고, 같이 치고 싶은 순서대로 <b>끌어서 정렬</b>해 제출해요.</p>
-    </li>
-    <li class="flex gap-3">
-      <span class="flex-none w-7 h-7 rounded-full bg-grass-600 text-white text-sm font-bold grid place-items-center">3</span>
-      <p class="text-sm text-slate-600 leading-relaxed"><b>마감 시간</b>이 되면 그때까지 모인 희망으로 <b>최적 조편성이 자동 확정</b>되고, 모두의 화면이 <b>결과로 바뀌어요.</b></p>
-    </li>
-  </ol>
-  <p class="mt-4 text-xs text-slate-400 leading-relaxed">※ 전원이 일찍 제출해도 <b>마감 시간까지</b> 기다렸다가 확정돼요. 더 빨리 끝내고 싶으면 주최자가 "지금 바로 확정"을 누르면 됩니다.</p>
-</section>
 {% endblock %}

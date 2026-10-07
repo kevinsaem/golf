@@ -45,6 +45,11 @@ templates.env.globals["GOOGLE_SITE_VERIFICATION"] = config.GOOGLE_SITE_VERIFICAT
 templates.env.globals["NAVER_SITE_VERIFICATION"] = config.NAVER_SITE_VERIFICATION
 
 
+@app.get("/guide", response_class=HTMLResponse)
+def guide(request: Request):
+    return templates.TemplateResponse("guide.html", {"request": request})
+
+
 @app.get("/robots.txt", response_class=PlainTextResponse)
 def robots_txt():
     return (
@@ -65,6 +70,8 @@ def sitemap_xml():
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
         f"  <url><loc>{config.APP_BASE_URL}/</loc>"
         "<changefreq>monthly</changefreq><priority>1.0</priority></url>\n"
+        f"  <url><loc>{config.APP_BASE_URL}/guide</loc>"
+        "<changefreq>monthly</changefreq><priority>0.8</priority></url>\n"
         "</urlset>\n"
     )
     return Response(content=xml, media_type="application/xml")

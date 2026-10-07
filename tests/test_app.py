@@ -77,16 +77,25 @@ def test_dashboard_shown_when_logged_in(ctx):
     assert "새 라운딩 만들기" in r.text
 
 
-def test_landing_intro_and_seo_when_logged_out(ctx):
-    """로그아웃 방문자(검색봇)에게 소개·사용법·SEO 메타가 보인다."""
+def test_landing_links_to_guide_and_has_seo(ctx):
+    """첫 화면은 로그인 중심 + 가이드 링크, SEO 메타 포함."""
     client, _, _ = ctx
     app.dependency_overrides[current_organizer] = lambda: None
     r = client.get("/")
-    assert "티메이트가 뭔가요?" in r.text
-    assert "이렇게 써요" in r.text
+    assert "/guide" in r.text  # 소개·사용법 별도 페이지 링크
     assert 'name="description"' in r.text
     assert 'name="keywords"' in r.text
     assert "application/ld+json" in r.text  # 구조화 데이터
+
+
+def test_guide_page(ctx):
+    """별도 소개·사용법 페이지."""
+    client, _, _ = ctx
+    r = client.get("/guide")
+    assert r.status_code == 200
+    assert "티메이트가 뭔가요?" in r.text
+    assert "기본 3단계" in r.text
+    assert "자동 마감" in r.text
 
 
 def test_robots_and_sitemap(ctx):
@@ -97,7 +106,8 @@ def test_robots_and_sitemap(ctx):
     assert "Disallow: /r/" in r.text
     s = client.get("/sitemap.xml")
     assert s.status_code == 200
-    assert "<urlset" in s.text and "/sitemap" not in s.text.split("urlset")[0]
+    assert "<urlset" in s.text
+    assert "/guide" in s.text  # 가이드 페이지도 사이트맵에
 
 
 def test_create_round_and_manage_page(ctx):

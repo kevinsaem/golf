@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}티메이트 사용 방법 — 골프 라운딩 조편성·조짜기 가이드{% endblock %}
+{% block head_extra %}
+<meta name="description" content="티메이트 사용 방법 안내. 골프 라운딩 조편성(조 짜기)을 마감 시간에 맞춰 자동으로 완성하는 방법 — 주최자 라운딩 만들기, 참가자 희망 순위 제출, 자동 확정까지.">
+{% endblock %}
+{% block header_right %}{% include "_academy_badge.html" %}{% endblock %}
+{% block content %}
+<a href="/" class="text-sm text-slate-400">← 홈으로</a>
+
+<div class="mt-3 text-center">
+  <div class="text-4xl mb-1">⛳</div>
+  <h1 class="text-xl font-extrabold text-slate-900">티메이트 사용 방법</h1>
+  <p class="mt-1 text-sm text-slate-500">골프 조편성, 이렇게 쉽게 끝내요</p>
+</div>
+
+<!-- 무엇 -->
+<section class="mt-8">
+  <h2 class="text-base font-extrabold text-slate-900">티메이트가 뭔가요?</h2>
+  <p class="mt-2 text-sm text-slate-600 leading-relaxed">
+    골프 라운딩 <b>조편성(조 짜기)</b>을 쉽고 공정하게 해주는 <b>무료</b> 서비스예요.
+    참가자들이 <b>같이 치고 싶은 사람</b> 순서만 정하면, 모두의 희망을 최대한 반영한
+    <b class="text-grass-700">최적의 조</b>를 자동으로 만들어 줍니다.
+    앱 설치 없이 <b>링크 하나</b>로, 눈치싸움·제비뽑기 없이 깔끔하게요.
+  </p>
+</section>
+
+<!-- 3단계 -->
+<section class="mt-8">
+  <h2 class="text-base font-extrabold text-slate-900">기본 3단계</h2>
+  <ol class="mt-3 space-y-3">
+    <li class="flex gap-3">
+      <span class="flex-none w-7 h-7 rounded-full bg-grass-600 text-white text-sm font-bold grid place-items-center">1</span>
+      <p class="text-sm text-slate-600 leading-relaxed"><b>주최자</b>가 구글 로그인 후 라운딩을 만들어요. (조 개수 · <b>마감 시간</b> · 참석자 명단) → <b>공유 링크</b>가 생겨요.</p>
+    </li>
+    <li class="flex gap-3">
+      <span class="flex-none w-7 h-7 rounded-full bg-grass-600 text-white text-sm font-bold grid place-items-center">2</span>
+      <p class="text-sm text-slate-600 leading-relaxed"><b>참가자</b>는 링크만 열면 돼요(로그인 X). 본인 이름을 고르고, 같이 치고 싶은 순서대로 <b>끌어서 정렬</b>해 제출해요.</p>
+    </li>
+    <li class="flex gap-3">
+      <span class="flex-none w-7 h-7 rounded-full bg-grass-600 text-white text-sm font-bold grid place-items-center">3</span>
+      <p class="text-sm text-slate-600 leading-relaxed"><b>마감 시간</b>이 되면 그때까지 모인 희망으로 <b>최적 조편성이 자동 확정</b>되고, 모두의 화면이 <b>결과로 바뀌어요.</b></p>
+    </li>
+  </ol>
+</section>
+
+<!-- 주최자 -->
+<section class="mt-8">
+  <h2 class="text-base font-extrabold text-slate-900">👤 주최자가 할 수 있는 것</h2>
+  <ul class="mt-3 space-y-2 text-sm text-slate-600">
+    <li>• 라운딩 만들기 — 조 개수, <b>자동 마감 시간(30분 단위)</b>, 참석자 명단</li>
+    <li>• 공유 링크를 참가자들에게 전달 (카톡 등)</li>
+    <li>• <b>내 희망순위 입력</b> — 주최자도 참가자라 같은 링크로 순위 제출</li>
+    <li>• <b>실시간 현황</b> — 누가 냈는지, 남은 시간, 미응답자 확인</li>
+    <li>• <b>명단 수정</b> — 이름 고치기·추가·삭제, 조 개수·마감 시간 변경</li>
+    <li>• <b>지금 바로 확정</b> — 마감 전이라도 즉시 결과 내기</li>
+    <li>• 결과에서 <b>두 명 자리 바꾸기</b>(수동 조정), 라운딩 삭제</li>
+  </ul>
+</section>
+
+<!-- 참가자 -->
+<section class="mt-8">
+  <h2 class="text-base font-extrabold text-slate-900">🙋 참가자는 이렇게</h2>
+  <ul class="mt-3 space-y-2 text-sm text-slate-600">
+    <li>• 받은 <b>링크</b>를 열고 명단에서 <b>본인 이름</b> 선택 (로그인 없음)</li>
+    <li>• 같이 치고 싶은 사람일수록 <b>위로 끌어</b> 순서를 정하고 제출</li>
+    <li>• 마감 전이면 <b>언제든 순위 수정</b> 가능</li>
+    <li>• 폰이 바뀌어도 링크 열고 이름 다시 고르면 이어서 OK</li>
+    <li>• <b>마감되면</b> 링크에서 바로 최종 조편성 결과를 볼 수 있어요</li>
+  </ul>
+</section>
+
+<!-- 자동 마감 -->
+<section class="mt-8">
+  <h2 class="text-base font-extrabold text-slate-900">⏰ 자동 마감 & 알림</h2>
+  <p class="mt-2 text-sm text-slate-600 leading-relaxed">
+    첫 참가자가 순위를 낸 시점부터 <b>마감 시간 카운트다운</b>이 시작돼요.
+    시간이 되면 그때까지 응답한 사람 기준으로 <b>자동 확정</b>되고,
+    주최자에게 <b>이메일 알림</b>이 갑니다. (전원이 일찍 내도 마감 시간까지는 기다려요.)
+  </p>
+</section>
+
+<a href="/" class="mt-9 block w-full text-center bg-grass-600 text-white font-bold rounded-xl px-5 py-3.5 shadow-sm active:scale-[0.99] transition">
+  티메이트 시작하기
+</a>
+{% endblock %}
