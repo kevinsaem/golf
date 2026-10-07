@@ -152,7 +152,7 @@ def test_participant_join_rank_and_reconnect(ctx):
     # 이제 순위 입력 폼
     r = client.get(f"/r/{pid}")
     assert "희망 순위" in r.text
-    assert "drag-handle" in r.text  # ≡ 손잡이로 드래그
+    assert "drag-card" in r.text  # 카드 전체가 드래그 영역
     assert "Sortable" in r.text
 
     # 순위 제출 (나,다,라... 순서)

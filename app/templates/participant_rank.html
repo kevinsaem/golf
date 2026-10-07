@@ -5,7 +5,7 @@
   <h1 class="text-lg font-extrabold text-slate-900">
     {{ me.name }}님의 희망 순위{% if editing %} <span class="text-grass-600">수정</span>{% endif %}
   </h1>
-  <p class="mt-1 text-sm text-slate-500">같이 치고 싶은 사람일수록 <b>앞 번호</b>로. 오른쪽 <b>≡ 손잡이</b>를 잡고 옮기세요. (번호 1번이 1지망)</p>
+  <p class="mt-1 text-sm text-slate-500">같이 치고 싶은 사람일수록 <b>앞 번호</b>로. <b>카드를 손가락으로 끌어</b> 옮기세요. (번호 1번이 1지망)</p>
   {% if editing %}
   <div class="mt-2 text-xs bg-slate-50 text-slate-500 rounded-lg px-3 py-2">현재 저장된 순서예요. 바꾼 뒤 아래 버튼을 누르면 수정돼요.</div>
   {% endif %}
@@ -16,10 +16,10 @@
   <ul id="rankList" class="grid grid-cols-2 gap-2">
     {% for o in others %}
     <li data-id="{{ o.id }}"
-      class="flex items-center gap-2 bg-white border border-slate-200 rounded-xl pl-2 pr-1 py-2.5 shadow-sm">
+      class="drag-card flex items-center gap-2 bg-white border border-slate-200 rounded-xl pl-2 pr-1 py-2.5 shadow-sm cursor-grab select-none touch-none">
       <span class="rank-badge flex-none w-6 h-6 rounded-full bg-grass-600 text-white text-xs font-bold grid place-items-center"></span>
       <span class="flex-1 font-medium text-slate-800 text-sm truncate">{{ o.name }}</span>
-      <span class="drag-handle flex-none grid place-items-center w-8 h-8 text-slate-300 text-lg cursor-grab touch-none" aria-label="순서 이동 손잡이">≡</span>
+      <span class="flex-none grid place-items-center w-8 h-8 text-slate-300 text-lg" aria-hidden="true">≡</span>
     </li>
     {% endfor %}
   </ul>
@@ -48,8 +48,13 @@
     document.getElementById('order').value =
       [...list.children].map(li => li.dataset.id).join(',');
   }
-  // handle 로만 드래그 시작 → 목록을 그냥 터치하면 스크롤, 손잡이를 잡아야 순위 이동
-  new Sortable(list, { animation: 150, handle: '.drag-handle', onEnd: renumber });
+  // 카드 전체를 드래그 영역으로 (모바일 터치에 강한 forceFallback)
+  new Sortable(list, {
+    animation: 150,
+    forceFallback: true,
+    fallbackTolerance: 4,
+    onEnd: renumber,
+  });
   renumber();
 </script>
 {% endblock %}
