@@ -280,6 +280,20 @@ def reopen_round(
     return RedirectResponse(f"/rounds/{public_id}/manage", status_code=303)
 
 
+@app.post("/rounds/{public_id}/delete")
+def delete_round(
+    public_id: str,
+    db: Session = Depends(get_db),
+    organizer: Optional[Organizer] = Depends(current_organizer),
+):
+    """주최자가 자기 라운딩을 완전히 삭제(참가자·순위·결과 포함)."""
+    rnd = _get_round_or_404(db, public_id)
+    _require_owner(rnd, organizer)
+    db.delete(rnd)
+    db.commit()
+    return RedirectResponse("/", status_code=303)
+
+
 @app.post("/rounds/{public_id}/swap")
 def swap_members(
     public_id: str,

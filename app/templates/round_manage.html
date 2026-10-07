@@ -148,6 +148,12 @@
   </form>
 </div>
 {% endif %}
+
+<!-- 라운딩 삭제 -->
+<form method="post" action="/rounds/{{ rnd.public_id }}/delete" class="mt-10"
+  onsubmit="return confirm('이 라운딩을 완전히 삭제할까요?\n참가자 명단·희망순위·결과가 모두 사라지고 되돌릴 수 없어요.')">
+  <button class="w-full text-sm text-red-500 border border-red-200 rounded-xl px-5 py-2.5 active:bg-red-50">🗑 이 라운딩 삭제</button>
+</form>
 {% endblock %}
 
 {% block scripts %}

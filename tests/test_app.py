@@ -461,6 +461,52 @@ def test_create_round_cleans_close_minutes_to_30_step(ctx):
     db.close()
 
 
+def test_delete_round(ctx):
+    """주최자는 자기 라운딩을 삭제할 수 있고, 참가자까지 함께 지워진다."""
+    from app.models import Participant
+
+    client, Session, _ = ctx
+    pid = _create_round(client)
+    db = Session()
+    rnd = db.query(Round).filter_by(public_id=pid).first()
+    rid = rnd.id
+    db.close()
+
+    r = client.post(f"/rounds/{pid}/delete", follow_redirects=False)
+    assert r.status_code == 303
+    assert r.headers["location"] == "/"
+
+    db = Session()
+    assert db.query(Round).filter_by(public_id=pid).first() is None
+    assert db.query(Participant).filter_by(round_id=rid).count() == 0  # 참가자도 삭제
+    db.close()
+
+
+def test_outsider_cannot_delete_round(ctx):
+    client, Session, org_id = ctx
+    pid = _create_round(client)
+    db = Session()
+    other = Organizer(google_sub="other-del", email="o2@test.com", name="딴사람2")
+    db.add(other)
+    db.commit()
+    other_id = other.id
+    db.close()
+
+    def as_other():
+        s = Session()
+        try:
+            yield s.get(Organizer, other_id)
+        finally:
+            s.close()
+
+    app.dependency_overrides[current_organizer] = as_other
+    r = client.post(f"/rounds/{pid}/delete", follow_redirects=False)
+    assert r.status_code == 403
+    db = Session()
+    assert db.query(Round).filter_by(public_id=pid).first() is not None  # 안 지워짐
+    db.close()
+
+
 def test_outsider_cannot_manage_round(ctx):
     client, Session, org_id = ctx
     pid = _create_round(client)
