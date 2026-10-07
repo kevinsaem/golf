@@ -11,6 +11,8 @@
   {% endif %}
 </div>
 
+{% include "_rules.html" %}
+
 <form method="post" action="/r/{{ rnd.public_id }}/rank" onsubmit="fillOrder()">
   <input type="hidden" name="order" id="order">
   <ul id="rankList" class="grid grid-cols-2 gap-2">

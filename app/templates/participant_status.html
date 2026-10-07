@@ -1,9 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="mb-5">
+<div class="mb-3">
   <p class="text-xs text-slate-400">{{ rnd.title }}</p>
   <h1 class="text-lg font-extrabold text-slate-900">{% if me %}{{ me.name }}님{% else %}조편성 결과{% endif %}</h1>
 </div>
+
+{% include "_rules.html" %}
+<div class="mb-4"></div>
 
 {% if notice == 'saved' %}
 <div class="mb-4 text-sm bg-grass-100 text-grass-800 rounded-lg px-4 py-2.5">✅ 희망 순위가 저장됐어요.</div>

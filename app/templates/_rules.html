@@ -1,0 +1,29 @@
+<div class="mt-3 text-center">
+  <button type="button" onclick="document.getElementById('rulesModal').classList.remove('hidden')"
+    class="inline-flex items-center gap-1 text-xs font-semibold text-grass-700 border border-grass-200 rounded-full px-3 py-1.5 active:bg-grass-50">
+    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.4 2.4 0 0 1 3.8-1.6c1.3 1 1 2.5-.4 3.2-.8.4-1.1.8-1.1 1.7"/><path d="M12 16.5h.01"/></svg>
+    조편성 규칙 보기
+  </button>
+</div>
+
+<div id="rulesModal" class="hidden fixed inset-0 z-50 flex items-end justify-center bg-black/40"
+     onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="bg-white rounded-t-2xl w-full max-w-md p-5 pb-7 max-h-[85vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="text-base font-extrabold text-slate-900">조편성은 이렇게 정해져요</h3>
+      <button type="button" onclick="document.getElementById('rulesModal').classList.add('hidden')"
+        class="text-slate-400" aria-label="닫기">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <ul class="space-y-2.5 text-sm text-slate-600 leading-relaxed">
+      <li class="flex gap-2"><span class="flex-none w-5 h-5 rounded-full bg-grass-100 text-grass-700 text-xs font-bold grid place-items-center">1</span><span>같이 치고 싶은 사람을 <b>위(앞 번호)</b>로 올릴수록 그 사람과 같은 조가 될 가능성이 높아져요.</span></li>
+      <li class="flex gap-2"><span class="flex-none w-5 h-5 rounded-full bg-grass-100 text-grass-700 text-xs font-bold grid place-items-center">2</span><span>모두의 희망을 모아 <b>전체 만족도가 가장 높은 조합</b>으로 자동 배정돼요.</span></li>
+      <li class="flex gap-2"><span class="flex-none w-5 h-5 rounded-full bg-grass-100 text-grass-700 text-xs font-bold grid place-items-center">3</span><span><b>서로가 서로를 원하면</b>(양방향) 더 우선돼요.</span></li>
+      <li class="flex gap-2"><span class="flex-none w-5 h-5 rounded-full bg-grass-100 text-grass-700 text-xs font-bold grid place-items-center">4</span><span><b>마감 시간</b>이 되면 그때까지 응답한 사람 기준으로 확정돼요.</span></li>
+      <li class="flex gap-2"><span class="flex-none w-5 h-5 rounded-full bg-grass-100 text-grass-700 text-xs font-bold grid place-items-center">5</span><span>모두를 100% 만족시킬 순 없어서, <b>최대한 많은 희망</b>이 반영되게 계산해요.</span></li>
+    </ul>
+    <button type="button" onclick="document.getElementById('rulesModal').classList.add('hidden')"
+      class="mt-5 w-full bg-grass-600 text-white font-bold rounded-xl py-3 active:scale-[0.99] transition">알겠어요</button>
+  </div>
+</div>

@@ -151,6 +151,7 @@ def test_participant_join_rank_and_reconnect(ctx):
     # 로그인 안 한 상태: 이름 선택 화면
     r = client.get(f"/r/{pid}")
     assert "본인 이름을 선택" in r.text
+    assert "조편성 규칙 보기" in r.text  # 규칙 안내 버튼
 
     # '가' 로 참여 (쿠키 발급)
     r = client.post(
