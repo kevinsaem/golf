@@ -530,6 +530,35 @@ def test_outsider_cannot_delete_round(ctx):
     db.close()
 
 
+def test_all_submitted_finalizes_immediately(ctx, monkeypatch):
+    """전원이 순위를 내면 마감시간을 안 기다리고 즉시 확정된다."""
+    import app.tasks as t
+
+    client, Session, _ = ctx
+    monkeypatch.setattr(t, "send_email", lambda *a, **k: True)
+    pid = _create_round(client, names=["가", "나"], group_count=1)
+    db = Session()
+    rnd = db.query(Round).filter_by(public_id=pid).first()
+    ids = {p.name: p.id for p in rnd.participants}
+    db.close()
+
+    c1 = TestClient(app)
+    c1.post(f"/r/{pid}/join", data={"participant_id": ids["가"]}, follow_redirects=False)
+    c1.post(f"/r/{pid}/rank", data={"order": str(ids["나"])}, follow_redirects=False)
+    db = Session()
+    assert db.query(Round).filter_by(public_id=pid).first().status == "collecting"  # 1/2
+    db.close()
+
+    c2 = TestClient(app)
+    c2.post(f"/r/{pid}/join", data={"participant_id": ids["나"]}, follow_redirects=False)
+    c2.post(f"/r/{pid}/rank", data={"order": str(ids["가"])}, follow_redirects=False)
+    db = Session()
+    rnd = db.query(Round).filter_by(public_id=pid).first()
+    assert rnd.status == "finalized"  # 2/2 → 즉시 확정
+    assert rnd.result_json is not None
+    db.close()
+
+
 def test_outsider_cannot_manage_round(ctx):
     client, Session, org_id = ctx
     pid = _create_round(client)

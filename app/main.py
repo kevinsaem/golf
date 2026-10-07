@@ -502,4 +502,6 @@ def participant_rank_submit(
     if rnd.deadline is None:
         rnd.deadline = tasks.utcnow() + timedelta(minutes=rnd.auto_close_minutes)
     db.commit()
+    # 전원 제출됐으면 마감시간 안 기다리고 즉시 확정 → 바로 결과 표시
+    tasks.finalize_all_submitted(db, rnd, str(request.base_url))
     return RedirectResponse(f"/r/{public_id}?saved=1", status_code=303)

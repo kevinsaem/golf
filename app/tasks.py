@@ -65,27 +65,42 @@ def finalize_round(db: Session, rnd: Round) -> None:
     db.commit()
 
 
-def _notify_auto_closed(rnd: Round, base_url: str) -> None:
+def _notify_closed(rnd: Round, base_url: str, reason: str = "deadline") -> None:
     organizer = rnd.organizer
     if not organizer or not organizer.email:
         return
     url = base_url.rstrip("/") + f"/rounds/{rnd.public_id}/manage"
-    subject = f"[티메이트] '{rnd.title}' 자동 마감 — 조편성이 확정됐어요"
+    if reason == "all":
+        headline = "참가자 전원이 희망 순위를 등록해서 바로 조편성이 확정됐어요."
+        subject = f"[티메이트] '{rnd.title}' 전원 등록 완료 — 조편성이 확정됐어요"
+    else:
+        headline = (
+            f"설정하신 시간에 도달해 자동 마감됐어요. "
+            f"응답한 {rnd.submitted_count}/{rnd.total_count}명 기준으로 확정됐습니다."
+        )
+        subject = f"[티메이트] '{rnd.title}' 자동 마감 — 조편성이 확정됐어요"
     text = (
         f"{organizer.name or '주최자'}님,\n\n"
-        f"'{rnd.title}' 라운딩이 설정하신 시간에 도달해 자동으로 마감됐어요.\n"
-        f"응답한 {rnd.submitted_count}/{rnd.total_count}명 기준으로 조편성이 확정됐습니다.\n\n"
+        f"'{rnd.title}' {headline}\n\n"
         f"▶ 결과 보기: {url}\n\n⛳ 티메이트 (golf.kevinsaem.com)"
     )
     html = (
         f"<p>{organizer.name or '주최자'}님,</p>"
-        f"<p><b>'{rnd.title}'</b> 라운딩이 설정 시간에 도달해 <b>자동 마감</b>됐어요.<br>"
-        f"응답한 <b>{rnd.submitted_count}/{rnd.total_count}명</b> 기준으로 조편성이 확정됐습니다.</p>"
+        f"<p><b>'{rnd.title}'</b> {headline}</p>"
         f"<p><a href=\"{url}\" style=\"display:inline-block;background:#16a34a;color:#fff;"
         f"padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:bold\">🏁 결과 보기</a></p>"
         f"<p style=\"color:#94a3b8;font-size:12px\">⛳ 티메이트 · golf.kevinsaem.com</p>"
     )
     send_email(organizer.email, subject, text, html)
+
+
+def finalize_all_submitted(db: Session, rnd: Round, base_url: str) -> bool:
+    """참가자 전원이 제출했으면 마감시간 안 기다리고 즉시 확정 + 주최자 메일."""
+    if rnd.status != "collecting" or not rnd.all_submitted:
+        return False
+    finalize_round(db, rnd)
+    _notify_closed(rnd, base_url, reason="all")
+    return True
 
 
 def auto_close_if_due(db: Session, rnd: Round, base_url: str) -> bool:
@@ -95,7 +110,7 @@ def auto_close_if_due(db: Session, rnd: Round, base_url: str) -> bool:
     if utcnow() < rnd.deadline:
         return False
     finalize_round(db, rnd)
-    _notify_auto_closed(rnd, base_url)
+    _notify_closed(rnd, base_url, reason="deadline")
     return True
 
 
@@ -110,6 +125,6 @@ def close_due_rounds(db: Session, base_url: str) -> int:
     for rnd in rounds:
         if rnd.deadline is not None and utcnow() >= rnd.deadline:
             finalize_round(db, rnd)
-            _notify_auto_closed(rnd, base_url)
+            _notify_closed(rnd, base_url, reason="deadline")
             count += 1
     return count
