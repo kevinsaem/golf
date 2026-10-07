@@ -17,7 +17,6 @@
 }
 </script>
 {% endblock %}
-{% block header_right %}{% include "_academy_badge.html" %}{% endblock %}
 {% block content %}
 <div class="text-center pt-3">
   <div class="text-5xl mb-2">⛳</div>
@@ -49,6 +48,16 @@
 
   <a href="/guide" class="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-grass-700">
     서비스 소개 · 사용 방법 보기 →
+  </a>
+</div>
+
+<!-- 학원 브랜딩 (하단, 성인 과정 링크) -->
+<div class="mt-8 pt-5 border-t border-slate-100 text-center">
+  <p class="text-[11px] text-slate-400 mb-2">made by</p>
+  <a href="https://www.kevinsaem.com/adult" target="_blank" rel="noopener noreferrer"
+     class="inline-flex items-center justify-center gap-2.5 active:scale-95 transition">
+    <img src="/static/logo.png" alt="안산 케빈샘 AI코딩학원" class="h-9 w-auto">
+    <span class="text-base font-extrabold text-slate-800 leading-tight">안산 케빈샘 <span class="text-grass-600">AI코딩학원</span></span>
   </a>
 </div>
 {% endblock %}
