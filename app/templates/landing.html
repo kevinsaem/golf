@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}티메이트 — 골프 라운딩 조편성·조짜기 자동 매칭{% endblock %}
+{% block title %}골프 조편성 자동 — 티메이트 | 골프 라운딩 조짜기·조 나누기 무료 사이트{% endblock %}
 {% block head_extra %}
 <script type="application/ld+json">
 {
@@ -14,6 +14,34 @@
   "inLanguage": "ko",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "KRW" },
   "author": { "@type": "Organization", "name": "안산 케빈샘 AI코딩학원", "url": "https://www.kevinsaem.com" }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "골프 조편성을 자동으로 할 수 있나요?",
+      "acceptedAnswer": { "@type": "Answer", "text": "네. 티메이트는 골프 라운딩 조편성(조 짜기)을 자동으로 해주는 무료 사이트입니다. 참가자들이 같이 치고 싶은 사람 순서만 정하면, 모두의 희망을 반영해 최적의 조를 자동으로 만들어 줍니다." }
+    },
+    {
+      "@type": "Question",
+      "name": "랜덤 조 추첨과 무엇이 다른가요?",
+      "acceptedAnswer": { "@type": "Answer", "text": "단순 랜덤 조 추첨과 달리, 티메이트는 참가자들이 제출한 희망 순위를 점수로 바꿔 전체 만족도가 가장 높은 조합을 찾습니다. 서로 같이 치고 싶어 하는 사람을 같은 조로 묶어주기 때문에 더 공정한 골프 조 나누기가 됩니다." }
+    },
+    {
+      "@type": "Question",
+      "name": "참가자도 회원가입을 해야 하나요?",
+      "acceptedAnswer": { "@type": "Answer", "text": "아니요. 주최자만 구글 로그인을 하면 되고, 참가자는 공유 링크만 열어 본인 이름을 고르고 희망 순서를 정하면 됩니다. 앱 설치도 필요 없습니다." }
+    },
+    {
+      "@type": "Question",
+      "name": "정말 무료인가요?",
+      "acceptedAnswer": { "@type": "Answer", "text": "네, 티메이트의 골프 조편성 기능은 완전 무료입니다. 인원 제한 없이 골프 모임·동호회 라운딩의 조짜기에 사용할 수 있습니다." }
+    }
+  ]
 }
 </script>
 {% endblock %}
@@ -55,4 +83,43 @@
 <div class="mt-6">
   {% include "_academy_ad.html" %}
 </div>
+
+<!-- 검색엔진용 소개 글 + 자주 묻는 질문 (SEO) -->
+<section class="mt-10 pt-8 border-t border-slate-100">
+  <h2 class="text-base font-extrabold text-slate-900">골프 조편성, 티메이트로 자동으로</h2>
+  <p class="mt-2.5 text-sm text-slate-600 leading-relaxed">
+    <b>티메이트</b>는 <b>골프 조편성(조 짜기)</b>을 자동으로 해주는 무료 사이트입니다.
+    골프 라운딩이나 골프 모임에서 조를 나눌 때, 제비뽑기나 눈치싸움 없이
+    참가자들이 <b>같이 치고 싶은 사람 순서</b>만 정하면 모두의 희망을 반영한
+    <b class="text-grass-700">최적의 골프 조 나누기</b>를 몇 초 만에 완성합니다.
+    앱 설치도, 참가자 회원가입도 필요 없이 링크 하나로 끝납니다.
+  </p>
+
+  <ul class="mt-4 space-y-2 text-sm text-slate-600 leading-relaxed">
+    <li class="flex gap-2"><span class="text-grass-600 font-bold">✓</span><span><b>골프 라운딩 조편성</b> — 조 개수만 정하면 자동 배정</span></li>
+    <li class="flex gap-2"><span class="text-grass-600 font-bold">✓</span><span><b>골프 조짜기·조 나누기</b> — 희망 순위 기반 공정 매칭</span></li>
+    <li class="flex gap-2"><span class="text-grass-600 font-bold">✓</span><span><b>골프 모임·동호회 조 편성</b> — 인원 제한 없이 무료</span></li>
+    <li class="flex gap-2"><span class="text-grass-600 font-bold">✓</span><span><b>랜덤 조 추첨보다 공정</b> — 서로 원하는 사람끼리 같은 조로</span></li>
+  </ul>
+
+  <h2 class="mt-8 text-base font-extrabold text-slate-900">자주 묻는 질문</h2>
+  <div class="mt-3 space-y-3">
+    <details class="rounded-xl border border-slate-200 p-3.5">
+      <summary class="text-sm font-semibold text-slate-800 cursor-pointer">골프 조편성을 자동으로 할 수 있나요?</summary>
+      <p class="mt-2 text-sm text-slate-600 leading-relaxed">네. 티메이트는 골프 라운딩 조편성(조 짜기)을 자동으로 해주는 무료 사이트입니다. 참가자들이 같이 치고 싶은 사람 순서만 정하면, 모두의 희망을 반영해 최적의 조를 자동으로 만들어 줍니다.</p>
+    </details>
+    <details class="rounded-xl border border-slate-200 p-3.5">
+      <summary class="text-sm font-semibold text-slate-800 cursor-pointer">랜덤 조 추첨과 무엇이 다른가요?</summary>
+      <p class="mt-2 text-sm text-slate-600 leading-relaxed">단순 랜덤 조 추첨과 달리, 티메이트는 참가자들이 제출한 희망 순위를 점수로 바꿔 전체 만족도가 가장 높은 조합을 찾습니다. 서로 같이 치고 싶어 하는 사람을 같은 조로 묶어주기 때문에 더 공정한 골프 조 나누기가 됩니다.</p>
+    </details>
+    <details class="rounded-xl border border-slate-200 p-3.5">
+      <summary class="text-sm font-semibold text-slate-800 cursor-pointer">참가자도 회원가입을 해야 하나요?</summary>
+      <p class="mt-2 text-sm text-slate-600 leading-relaxed">아니요. 주최자만 구글 로그인을 하면 되고, 참가자는 공유 링크만 열어 본인 이름을 고르고 희망 순서를 정하면 됩니다. 앱 설치도 필요 없습니다.</p>
+    </details>
+    <details class="rounded-xl border border-slate-200 p-3.5">
+      <summary class="text-sm font-semibold text-slate-800 cursor-pointer">정말 무료인가요?</summary>
+      <p class="mt-2 text-sm text-slate-600 leading-relaxed">네, 티메이트의 골프 조편성 기능은 완전 무료입니다. 인원 제한 없이 골프 모임·동호회 라운딩의 조짜기에 사용할 수 있습니다.</p>
+    </details>
+  </div>
+</section>
 {% endblock %}
